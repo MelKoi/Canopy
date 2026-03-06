@@ -49,7 +49,11 @@ public class MechController : MonoBehaviour
         currentEnergy = maxEnergy;
         currentProfile = groundProfile;
     }
-
+    void Start()
+    {
+        Cursor.lockState = CursorLockMode.Locked;
+        Cursor.visible = false;
+    }
     void Update()
     {
         UpdateMoveDirection();
