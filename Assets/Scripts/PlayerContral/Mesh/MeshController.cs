@@ -157,11 +157,11 @@ public class MechController : MonoBehaviour
         }
         else
         {
-            targetVelocity.y = rb.linearVelocity.y;
+            targetVelocity.y = rb.velocity.y;
         }
 
-        rb.linearVelocity = Vector3.MoveTowards(
-            rb.linearVelocity,
+        rb.velocity = Vector3.MoveTowards(
+            rb.velocity,
             targetVelocity,
             currentProfile.acceleration * Time.fixedDeltaTime
         );
@@ -185,9 +185,9 @@ public class MechController : MonoBehaviour
 
         if (isGrounded && input.JumpPressed)
         {
-            Vector3 v = rb.linearVelocity;
+            Vector3 v = rb.velocity;
             v.y = 8f;
-            rb.linearVelocity = v;
+            rb.velocity = v;
         }
     }
 
@@ -200,7 +200,7 @@ public class MechController : MonoBehaviour
         isDodging = true;
         currentEnergy -= dodgeProfile.energyCostPerSecond;
 
-        rb.linearVelocity = moveDir * dodgeProfile.maxSpeed;
+        rb.velocity = moveDir * dodgeProfile.maxSpeed;
 
         yield return new WaitForSeconds(0.3f);
         isDodging = false;
