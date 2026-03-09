@@ -793,6 +793,21 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 6389076534270312475}
     m_Modifications:
+    - target: {fileID: 153988181285838374, guid: 0974bf4286f9cd540b1e16c4ba49df49,
+        type: 3}
+      propertyPath: cameraPivot
+      value: 
+      objectReference: {fileID: 3766168382653469458}
+    - target: {fileID: 277111957094496366, guid: 0974bf4286f9cd540b1e16c4ba49df49,
+        type: 3}
+      propertyPath: m_LocalPosition.x
+      value: -2.055
+      objectReference: {fileID: 0}
+    - target: {fileID: 277111957094496366, guid: 0974bf4286f9cd540b1e16c4ba49df49,
+        type: 3}
+      propertyPath: m_LocalPosition.y
+      value: -4.313
+      objectReference: {fileID: 0}
     - target: {fileID: 771923837145881762, guid: 0974bf4286f9cd540b1e16c4ba49df49,
         type: 3}
       propertyPath: m_LocalPosition.x
@@ -990,7 +1005,7 @@ PrefabInstance:
     - target: {fileID: 3268843634863619008, guid: 0974bf4286f9cd540b1e16c4ba49df49,
         type: 3}
       propertyPath: groundMask.m_Bits
-      value: 64
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 3268843634863619008, guid: 0974bf4286f9cd540b1e16c4ba49df49,
         type: 3}
@@ -1048,6 +1063,11 @@ PrefabInstance:
       propertyPath: m_Mass
       value: 10
       objectReference: {fileID: 0}
+    - target: {fileID: 6711047684368287311, guid: 0974bf4286f9cd540b1e16c4ba49df49,
+        type: 3}
+      propertyPath: cameraPivot
+      value: 
+      objectReference: {fileID: 3766168382653469458}
     - target: {fileID: 6882661412503145912, guid: 0974bf4286f9cd540b1e16c4ba49df49,
         type: 3}
       propertyPath: mechMesh
