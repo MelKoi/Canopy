@@ -1,4 +1,4 @@
-﻿using UnityEngine;
+using UnityEngine;
 
 [RequireComponent(typeof(Rigidbody))]
 public class MechController : MonoBehaviour
@@ -151,20 +151,28 @@ public class MechController : MonoBehaviour
             targetVelocity = moveDir * currentProfile.maxSpeed;
         }
 
+        // 竖直方向：升空时用加速度推向目标速度，松开升空时用减速度快速衰减（增加重量感）
         if (!isGrounded && currentProfile == verticalBoostProfile)
         {
             targetVelocity.y = currentProfile.maxSpeed;
+        }
+        else if (!isGrounded)
+        {
+            // 空中且未在升空：向上速度快速衰减，让机甲感觉更重、不飘
+            float decayTarget = rb.velocity.y > 0f ? 0f : (rb.velocity.y + Physics.gravity.y * Time.fixedDeltaTime);
+            targetVelocity.y = Mathf.MoveTowards(rb.velocity.y, decayTarget, currentProfile.deceleration * Time.fixedDeltaTime);
         }
         else
         {
             targetVelocity.y = rb.velocity.y;
         }
 
-        rb.velocity = Vector3.MoveTowards(
-            rb.velocity,
-            targetVelocity,
-            currentProfile.acceleration * Time.fixedDeltaTime
-        );
+        // 水平用加速度，竖直已单独处理时需分轴插值，否则用统一加速度
+        float acc = currentProfile.acceleration * Time.fixedDeltaTime;
+        Vector3 nextVel = Vector3.MoveTowards(rb.velocity, targetVelocity, acc);
+        if (!isGrounded && currentProfile != verticalBoostProfile)
+            nextVel.y = targetVelocity.y; // 空中松开升空时使用上面算好的衰减结果
+        rb.velocity = nextVel;
     }
 
     #endregion
@@ -186,7 +194,7 @@ public class MechController : MonoBehaviour
         if (isGrounded && input.JumpPressed)
         {
             Vector3 v = rb.velocity;
-            v.y = 8f;
+            v.y = 5f; // 降低起跳初速，避免机甲感觉过轻、过弹
             rb.velocity = v;
         }
     }

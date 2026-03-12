@@ -1,4 +1,4 @@
-﻿using System.Collections;
+using System.Collections;
 using UnityEngine;
 
 public class EntryCameraSequence : MonoBehaviour//入场动画脚本
@@ -31,8 +31,19 @@ public class EntryCameraSequence : MonoBehaviour//入场动画脚本
             cam.transform.rotation = Quaternion.Slerp(startRot, thirdPersonAnchor.rotation, t);
             yield return null;
         }
-        controller.ResetViewFromCurrentCamera();
 
+        // Align to third-person anchor. Use local position/rotation so controller (which drives in parent local space) stays correct.
+        if (cam.transform.parent != null && thirdPersonAnchor.parent == cam.transform.parent)
+        {
+            cam.transform.localPosition = thirdPersonAnchor.localPosition;
+            cam.transform.localRotation = thirdPersonAnchor.localRotation;
+        }
+        else
+        {
+            cam.transform.position = thirdPersonAnchor.position;
+            cam.transform.rotation = thirdPersonAnchor.rotation;
+        }
+        controller.ResetViewFromCurrentCamera();
         controller.enableInput = true;
     }
 

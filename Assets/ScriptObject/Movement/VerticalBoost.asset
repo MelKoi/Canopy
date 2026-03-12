@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1d6bb02f37793534db45673d267a10c8, type: 3}
   m_Name: VerticalBoost
   m_EditorClassIdentifier: Assembly-CSharp::MovementProfile
-  maxSpeed: 15
-  acceleration: 40
-  deceleration: 30
+  maxSpeed: 8
+  acceleration: 18
+  deceleration: 35
   energyCostPerSecond: 15
