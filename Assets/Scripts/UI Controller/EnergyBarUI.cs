@@ -1,35 +1,30 @@
 using UnityEngine;
 using UnityEngine.UI;
 
+/// <summary>
+/// 根据 MechController 的当前能量更新体力条 Fill 的填充量。
+/// 填充对象为 EnergyBarRoot 下的 Fill（UnityEngine.UI.Image，Type 需为 Filled）。
+/// </summary>
 public class EnergyBarUI : MonoBehaviour
 {
-    [Header("Reference")]
-    public MechController mech;//机体
-    public Image fillImage;//填充图片
-
-    [Header("Smooth")]
-    public float smoothSpeed = 10f;//平滑进度条变动速度
-
-    float currentFill = 1f;//填充图片的长
-   
+    [Tooltip("提供能量数据的机甲控制器")]
+    public MechController mech;
+    [Tooltip("用于显示填充的 Image（EnergyBarRoot 下的 Fill），Image Type 需设为 Filled")]
+    public Image fillImage;
+    [Tooltip("填充变化的平滑速度")]
+    public float smoothSpeed = 10f;
 
     void Update()
     {
-        if (mech == null || fillImage == null) return;
+        if (mech == null || fillImage == null)
+            return;
 
-        float targetFill = mech.CurrentEnergy / mech.MaxEnergy;//计算当前的位置
+        float targetAmount = mech.MaxEnergy > 0f
+            ? Mathf.Clamp01(mech.CurrentEnergy / mech.MaxEnergy)
+            : 0f;
 
-        currentFill = Mathf.Lerp(
-            currentFill,
-            targetFill,
-            Time.deltaTime * smoothSpeed
-        );//获取具体数值
-
-        fillImage.fillAmount = currentFill;//调整
-        //if (targetFill < 0.25f)
-        //    fillImage.color = Color.red;
-        //else
-        //    fillImage.color = Color.aliceBlue;
-
+        fillImage.fillAmount = smoothSpeed <= 0f
+            ? targetAmount
+            : Mathf.MoveTowards(fillImage.fillAmount, targetAmount, smoothSpeed * Time.deltaTime);
     }
 }

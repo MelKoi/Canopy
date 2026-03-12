@@ -132,6 +132,81 @@ PrefabInstance:
       propertyPath: m_Name
       value: PlayerRoot
       objectReference: {fileID: 0}
+    - target: {fileID: 610420024218711891, guid: aefd466c62fe6a64da44a16085783098,
+        type: 3}
+      propertyPath: m_SizeDelta.x
+      value: 901.52
+      objectReference: {fileID: 0}
+    - target: {fileID: 610420024218711891, guid: aefd466c62fe6a64da44a16085783098,
+        type: 3}
+      propertyPath: m_SizeDelta.y
+      value: 28.444
+      objectReference: {fileID: 0}
+    - target: {fileID: 610420024218711891, guid: aefd466c62fe6a64da44a16085783098,
+        type: 3}
+      propertyPath: m_AnchoredPosition.x
+      value: 0.0007839203
+      objectReference: {fileID: 0}
+    - target: {fileID: 610420024218711891, guid: aefd466c62fe6a64da44a16085783098,
+        type: 3}
+      propertyPath: m_AnchoredPosition.y
+      value: -35.778
+      objectReference: {fileID: 0}
+    - target: {fileID: 1255963185184011180, guid: aefd466c62fe6a64da44a16085783098,
+        type: 3}
+      propertyPath: fillOverflow
+      value: 10
+      objectReference: {fileID: 0}
+    - target: {fileID: 1797129346616766012, guid: aefd466c62fe6a64da44a16085783098,
+        type: 3}
+      propertyPath: m_Type
+      value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 1797129346616766012, guid: aefd466c62fe6a64da44a16085783098,
+        type: 3}
+      propertyPath: m_Sprite
+      value: 
+      objectReference: {fileID: 10905, guid: 0000000000000000f000000000000000, type: 0}
+    - target: {fileID: 1797129346616766012, guid: aefd466c62fe6a64da44a16085783098,
+        type: 3}
+      propertyPath: m_Maskable
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 1797129346616766012, guid: aefd466c62fe6a64da44a16085783098,
+        type: 3}
+      propertyPath: m_FillAmount
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 1797129346616766012, guid: aefd466c62fe6a64da44a16085783098,
+        type: 3}
+      propertyPath: m_FillMethod
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1797129346616766012, guid: aefd466c62fe6a64da44a16085783098,
+        type: 3}
+      propertyPath: m_RaycastTarget
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 1797129346616766012, guid: aefd466c62fe6a64da44a16085783098,
+        type: 3}
+      propertyPath: m_PreserveAspect
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1797129346616766012, guid: aefd466c62fe6a64da44a16085783098,
+        type: 3}
+      propertyPath: m_RaycastPadding.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6214645983825536988, guid: aefd466c62fe6a64da44a16085783098,
+        type: 3}
+      propertyPath: m_Type
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 6214645983825536988, guid: aefd466c62fe6a64da44a16085783098,
+        type: 3}
+      propertyPath: m_Sprite
+      value: 
+      objectReference: {fileID: 10907, guid: 0000000000000000f000000000000000, type: 0}
     - target: {fileID: 6389076534270312475, guid: aefd466c62fe6a64da44a16085783098,
         type: 3}
       propertyPath: m_LocalPosition.x
