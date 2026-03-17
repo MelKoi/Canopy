@@ -91,8 +91,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: -450.7617, y: -35.778214}
-  m_SizeDelta: {x: 901.5234, y: 28.4443}
+  m_AnchoredPosition: {x: -450.76, y: -35.778}
+  m_SizeDelta: {x: 901.52, y: 28.444}
   m_Pivot: {x: 0, y: 0.5}
 --- !u!222 &3414091456609742457
 CanvasRenderer:
@@ -251,7 +251,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 0}
+  m_Sprite: {fileID: 10907, guid: 0000000000000000f000000000000000, type: 0}
   m_Type: 0
   m_PreserveAspect: 0
   m_FillCenter: 1
@@ -575,6 +575,11 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 3268843634863619008, guid: 0974bf4286f9cd540b1e16c4ba49df49,
+        type: 3}
+      propertyPath: bodyTransform
+      value: 
+      objectReference: {fileID: 7447137357112720080}
     - target: {fileID: 3387470511315865329, guid: 0974bf4286f9cd540b1e16c4ba49df49,
         type: 3}
       propertyPath: m_LocalRotation.w
@@ -689,6 +694,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 55f43b0bad95670489a909ebcd29f875, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::LockOnSystem
+--- !u!4 &7447137357112720080 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 4293977078405673171, guid: 0974bf4286f9cd540b1e16c4ba49df49,
+    type: 3}
+  m_PrefabInstance: {fileID: 6687509679996963331}
+  m_PrefabAsset: {fileID: 0}
 --- !u!114 &8184040428872610243 stripped
 MonoBehaviour:
   m_CorrespondingSourceObject: {fileID: 3268843634863619008, guid: 0974bf4286f9cd540b1e16c4ba49df49,

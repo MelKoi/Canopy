@@ -6,6 +6,8 @@ public class MechController : MonoBehaviour
     [Header("Reference")]
     public MechInput input;
     public Transform cameraTransform;
+    /// <summary>机体转向时用于朝向与移动方向的机体（如 DownBody），坦克式时可不设</summary>
+    public Transform bodyTransform;
 
     [Header("Movement Profiles")]//移动参数配置
     public MovementProfile groundProfile;
@@ -19,10 +21,17 @@ public class MechController : MonoBehaviour
     public float energyRegen = 25f;
     public float energyRegenInSky = 5f;
 
-    [Header("Ground Check")]//地面检测
+    [Header("Ground Check")]//地面检测（LayerMask 勾选 Ground，地面物体设为 Ground 层）
     public Transform groundCheck;
     public LayerMask groundMask;
-    public float groundCheckDistance = 0.3f;
+    [Tooltip("检测球半径，站在地面时球体需能碰到 Ground 层；若触地不稳可适当调大")]
+    public float groundCheckRadius = 0.4f;
+    [Tooltip("未指定 groundCheck 时，用机体中心向下此偏移作为检测点（脚底附近）")]
+    public float groundCheckOffsetFromCenter = 0.6f;
+    [Tooltip("地面起跳初速度，可适当调大防止吸附感")]
+    public float jumpVelocity = 7f;
+    [Tooltip("地面起跳后此时间内不进入「长按升空」，避免点按也扣能")]
+    public float jumpAscendCooldownTime = 0.25f;
 
     Rigidbody rb;
     MovementProfile currentProfile;//当前的速度参数
@@ -36,10 +45,17 @@ public class MechController : MonoBehaviour
     bool isDodging;
     bool isOverBoosting;
     bool isBoosting;
+    float _jumpAscendCooldown; // 起跳后一段时间内不触发长按升空
+    bool _justAppliedJump;     // 本帧已施加起跳，避免同帧 ApplyMovement 把 vy 衰减掉
+
+    /// <summary>true=坦克式（镜头转机体不转），false=机体转向（A/D 转机体，镜头跟随）</summary>
+    public bool TankMode { get; private set; }
 
     #region Interface
     public float CurrentEnergy => currentEnergy;
     public float MaxEnergy => maxEnergy;
+    /// <summary>当前是否处于极速推进/冲刺状态（Tab）</summary>
+    public bool IsSprinting => isOverBoosting;
     #endregion
 
     void Awake()
@@ -56,14 +72,18 @@ public class MechController : MonoBehaviour
     }
     void Update()
     {
+        if (_jumpAscendCooldown > 0f)
+            _jumpAscendCooldown -= Time.deltaTime;
+        if (input.TurnModeTogglePressed)
+            TankMode = !TankMode;
         UpdateMoveDirection();
         UpdateState();
         RegenerateEnergy();
-        Debug.Log(isGrounded);
     }
 
     void FixedUpdate()
     {
+        _justAppliedJump = false;
         UpdateGrounded();
         ApplyMovement();
         ConsumeEnergy();
@@ -81,13 +101,22 @@ public class MechController : MonoBehaviour
             return;
         }
 
-        if (input.OverBoostHeld && currentEnergy > 0f)//极速推进
+        if (input.OverBoostHeld && currentEnergy > 0f) // 按 Tab 极速推进（冲刺）
         {
             if (!isOverBoosting)
             {
-                lockedOverBoostDir = moveDir == Vector3.zero ? transform.forward : moveDir;
+                // 没按 WASD 时朝镜头方向（往前）冲刺，否则按当前移动方向
+                if (moveDir.sqrMagnitude < 0.01f)
+                {
+                    Vector3 camFwd = cameraTransform.forward;
+                    camFwd.y = 0;
+                    lockedOverBoostDir = camFwd.sqrMagnitude > 0.01f ? camFwd.normalized : transform.forward;
+                }
+                else
+                {
+                    lockedOverBoostDir = moveDir;
+                }
             }
-
             isOverBoosting = true;
             currentProfile = overBoostProfile;
             return;
@@ -95,7 +124,8 @@ public class MechController : MonoBehaviour
 
         isOverBoosting = false;
 
-        if (!isGrounded && input.JumpHeld && currentEnergy > 0f)//地面监测和跳跃
+        // 长按空格升空：仅在空中且未处于「起跳冷却」时扣能升空，点按空格只做地面起跳
+        if (!isGrounded && input.JumpHeld && currentEnergy > 0f && _jumpAscendCooldown <= 0f)
         {
             currentProfile = verticalBoostProfile;
             return;
@@ -126,14 +156,34 @@ public class MechController : MonoBehaviour
 
     void UpdateMoveDirection()
     {
-        Vector3 camF = cameraTransform.forward;
-        Vector3 camR = cameraTransform.right;
-        camF.y = camR.y = 0;
-
-        moveDir =
-            camF.normalized * input.MoveAxis.y +
-            camR.normalized * input.MoveAxis.x;
-
+        if (TankMode)
+        {
+            // 坦克式：机体不转，按镜头方向移动
+            Vector3 camF = cameraTransform.forward;
+            Vector3 camR = cameraTransform.right;
+            camF.y = camR.y = 0;
+            moveDir = camF.normalized * input.MoveAxis.y + camR.normalized * input.MoveAxis.x;
+        }
+        else
+        {
+            // 机体转向：移动沿机体前后左右（W/S 前后，A/D 左右）
+            if (bodyTransform != null)
+            {
+                Vector3 fwd = bodyTransform.forward;
+                Vector3 right = bodyTransform.right;
+                fwd.y = right.y = 0;
+                if (fwd.sqrMagnitude > 0.01f) fwd = fwd.normalized;
+                if (right.sqrMagnitude > 0.01f) right = right.normalized;
+                moveDir = fwd * input.MoveAxis.y + right * input.MoveAxis.x;
+            }
+            else
+            {
+                Vector3 camF = cameraTransform.forward;
+                Vector3 camR = cameraTransform.right;
+                camF.y = camR.y = 0;
+                moveDir = camF.normalized * input.MoveAxis.y + camR.normalized * input.MoveAxis.x;
+            }
+        }
         if (moveDir.sqrMagnitude > 1f)
             moveDir.Normalize();
     }
@@ -158,20 +208,32 @@ public class MechController : MonoBehaviour
         }
         else if (!isGrounded)
         {
-            // 空中且未在升空：向上速度快速衰减，让机甲感觉更重、不飘
-            float decayTarget = rb.velocity.y > 0f ? 0f : (rb.velocity.y + Physics.gravity.y * Time.fixedDeltaTime);
-            targetVelocity.y = Mathf.MoveTowards(rb.velocity.y, decayTarget, currentProfile.deceleration * Time.fixedDeltaTime);
+            // 空中且未在升空：向上速度快速衰减；若本帧刚起跳则保留 vy 不衰减
+            if (_justAppliedJump)
+                targetVelocity.y = rb.velocity.y;
+            else
+            {
+                float decayTarget = rb.velocity.y > 0f ? 0f : (rb.velocity.y + Physics.gravity.y * Time.fixedDeltaTime);
+                targetVelocity.y = Mathf.MoveTowards(rb.velocity.y, decayTarget, currentProfile.deceleration * Time.fixedDeltaTime);
+            }
         }
         else
         {
             targetVelocity.y = rb.velocity.y;
         }
 
-        // 水平用加速度，竖直已单独处理时需分轴插值，否则用统一加速度
+        // 水平：加速时用 acceleration（瞬间响应），减速/松键时用 deceleration（松键即停，保留极小惯性）
         float acc = currentProfile.acceleration * Time.fixedDeltaTime;
-        Vector3 nextVel = Vector3.MoveTowards(rb.velocity, targetVelocity, acc);
-        if (!isGrounded && currentProfile != verticalBoostProfile)
-            nextVel.y = targetVelocity.y; // 空中松开升空时使用上面算好的衰减结果
+        float dec = currentProfile.deceleration * Time.fixedDeltaTime;
+        Vector2 curHorz = new Vector2(rb.velocity.x, rb.velocity.z);
+        Vector2 tarHorz = new Vector2(targetVelocity.x, targetVelocity.z);
+        float stepHorz = (tarHorz.sqrMagnitude <= curHorz.sqrMagnitude + 0.001f) ? dec : acc;
+        Vector2 nextHorz = Vector2.MoveTowards(curHorz, tarHorz, stepHorz);
+
+        Vector3 nextVel;
+        nextVel.x = nextHorz.x;
+        nextVel.z = nextHorz.y;
+        nextVel.y = targetVelocity.y; // 地面保持 vy；空中为升空目标或衰减结果
         rb.velocity = nextVel;
     }
 
@@ -181,21 +243,20 @@ public class MechController : MonoBehaviour
 
     void UpdateGrounded()
     {
-        isGrounded = Physics.SphereCast(
-        groundCheck.position,
-        0.3f,
-        Vector3.down,
-        out _,
-        groundCheckDistance,
-        groundMask
-        );
-
+        // 用重叠球检测：站在地面时脚底球体与 Ground 层碰撞体重叠即判为触地
+        Vector3 checkPos = groundCheck != null ? groundCheck.position : transform.position + Vector3.down * groundCheckOffsetFromCenter;
+        if (groundMask != 0)
+            isGrounded = Physics.CheckSphere(checkPos, groundCheckRadius, groundMask);
+        else
+            isGrounded = false;
 
         if (isGrounded && input.JumpPressed)
         {
             Vector3 v = rb.velocity;
-            v.y = 5f; // 降低起跳初速，避免机甲感觉过轻、过弹
+            v.y = jumpVelocity;
             rb.velocity = v;
+            _jumpAscendCooldown = jumpAscendCooldownTime;
+            _justAppliedJump = true; // 防止本帧后续 ApplyMovement 把起跳速度衰减掉
         }
     }
 

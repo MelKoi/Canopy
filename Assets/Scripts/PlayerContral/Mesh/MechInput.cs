@@ -1,6 +1,6 @@
 using UnityEngine;
 
-public class MechInput : MonoBehaviour//获取输入
+public class MechInput : MonoBehaviour//潩?潩潩
 {
     public Vector2 MoveAxis { get; private set; }
     public bool JumpPressed { get; private set; }
@@ -8,6 +8,8 @@ public class MechInput : MonoBehaviour//获取输入
     public bool BoostPressed { get; private set; }
     public bool DodgePressed { get; private set; }
     public bool OverBoostHeld { get; private set; }
+    /// <summary>????? ???? / ???????? C?</summary>
+    public bool TurnModeTogglePressed { get; private set; }
 
     void Update()
     {
@@ -21,5 +23,6 @@ public class MechInput : MonoBehaviour//获取输入
         BoostPressed = Input.GetKeyDown(KeyCode.LeftControl);
         DodgePressed = Input.GetKeyDown(KeyCode.LeftShift);
         OverBoostHeld = Input.GetKey(KeyCode.Tab);
+        TurnModeTogglePressed = Input.GetKeyDown(KeyCode.C);
     }
 }
