@@ -17,26 +17,26 @@ public class CameraController : MonoBehaviour
     public Vector2 verticalClamp = new Vector2(-30f, 60f);
     public Vector3 offset = new Vector3(0f, 1f, -11f);
 
-    [Header("æœºä½“è½¬å‘æ—¶é•œå¤´è·Ÿéš")]
-    [Tooltip("æœºä½“è½¬å‘æ¨¡å¼ä¸‹ï¼Œé•œå¤´ yaw è·Ÿéšæœºä½“çš„å¹³æ»‘æ—¶é—´ï¼ˆç§’ï¼‰ï¼Œ0.05â€“0.1 è¾ƒè‡ªç„¶")]
+    [Header("»úÌå×ªÏòÊ±¾µÍ·¸úËæ")]
+    [Tooltip("»úÌå×ªÏòÄ£Ê½ÏÂ£¬¾µÍ· yaw ¸úËæ»úÌåµÄÆ½»¬Ê±¼ä£¨Ãë£©£¬0.05¨C0.1 ½Ï×ÔÈ»")]
     public float bodyTurnYawFollowSmoothTime = 0.08f;
 
-    /// <summary>å¯é€‰ï¼šç”¨äºæœºä½“è½¬å‘æ—¶é•œå¤´ yaw è·Ÿéšæœºä½“</summary>
+    /// <summary>¿ÉÑ¡£ºÓÃÓÚ»úÌå×ªÏòÊ±¾µÍ· yaw ¸úËæ»úÌå</summary>
     public MechController mechController;
 
-    [Header("å†²åˆº FOV")]
-    [Tooltip("å†²åˆºæ—¶ FOV æ‹‰å¤§ä»¥å¢åŠ é€Ÿåº¦æ„Ÿï¼Œä¸è®¾åˆ™ç”¨å½“å‰ Camera çš„ FOV ä½œä¸ºé»˜è®¤")]
+    [Header("³å´Ì FOV")]
+    [Tooltip("³å´ÌÊ± FOV À­´óÒÔÔö¼ÓËÙ¶È¸Ğ£¬²»ÉèÔòÓÃµ±Ç° Camera µÄ FOV ×÷ÎªÄ¬ÈÏ")]
     public float normalFOV = 60f;
     public float sprintFOV = 68f;
-    [Tooltip("FOV å˜åŒ–å¹³æ»‘é€Ÿåº¦")]
+    [Tooltip("FOV ±ä»¯Æ½»¬ËÙ¶È")]
     public float fovLerpSpeed = 8f;
-    [Tooltip("ç”¨äºæ”¹ FOV çš„ç›¸æœºï¼Œä¸è®¾åˆ™ç”¨åŒç‰©ä½“ä¸Šçš„ Camera")]
+    [Tooltip("ÓÃÓÚ¸Ä FOV µÄÏà»ú£¬²»ÉèÔòÓÃÍ¬ÎïÌåÉÏµÄ Camera")]
     public Camera cameraForFOV;
 
-    [Header("å¼€ç«å±å¹•éœ‡åŠ¨")]
-    [Tooltip("æ¯æ¬¡å¼€ç«ç»•å„è½´éšæœºæŠ–åŠ¨ï¼ˆåº¦ï¼‰ï¼Œè½»å¾®å³å¯")]
+    [Header("¿ª»ğÆÁÄ»Õğ¶¯")]
+    [Tooltip("Ã¿´Î¿ª»ğÈÆ¸÷ÖáËæ»ú¶¶¶¯£¨¶È£©£¬ÇáÎ¢¼´¿É")]
     public Vector3 shootShakeImpulseEuler = new Vector3(0.38f, 0.3f, 0.14f);
-    [Tooltip("éœ‡åŠ¨è¡°å‡ï¼Œè¶Šå¤§è¶Šå¿«åœç¨³")]
+    [Tooltip("Õğ¶¯Ë¥¼õ£¬Ô½´óÔ½¿ìÍ£ÎÈ")]
     public float shootShakeDecay = 16f;
 
     Camera _cam;
@@ -58,7 +58,7 @@ public class CameraController : MonoBehaviour
     {
         if (!_hasSyncedFromCamera) return;
 
-        // é¼ æ ‡å§‹ç»ˆæ§åˆ¶é•œå¤´å·¦å³ä¸ä¿¯ä»°
+        // Êó±êÊ¼ÖÕ¿ØÖÆ¾µÍ·×óÓÒÓë¸©Ñö
         if (enableInput && Mouse.current != null)
         {
             Vector2 mouseDelta = Mouse.current.delta.ReadValue();
@@ -83,7 +83,7 @@ public class CameraController : MonoBehaviour
             transform.rotation = rotation;
         }
 
-        // å†²åˆºæ—¶ FOV ç¨å¾®æ‹‰å¤§
+        // ³å´ÌÊ± FOV ÉÔÎ¢À­´ó
         if (_cam != null)
         {
             float targetFOV = (mechController != null && mechController.IsSprinting) ? sprintFOV : normalFOV;
@@ -126,7 +126,7 @@ public class CameraController : MonoBehaviour
         _pitch = Mathf.Clamp(newPitch, verticalClamp.x, verticalClamp.y);
     }
 
-    /// <summary>æ­¦å™¨å¼€ç«æ—¶è°ƒç”¨ï¼Œäº§ç”Ÿè½»å¾®å±å¹•æŠ–åŠ¨æ„Ÿã€‚</summary>
+    /// <summary>ÎäÆ÷¿ª»ğÊ±µ÷ÓÃ£¬²úÉúÇáÎ¢ÆÁÄ»¶¶¶¯¸Ğ¡£</summary>
     public void AddShootScreenShake(float strength = 1f)
     {
         _shootShakeEuler.x += (Random.value * 2f - 1f) * shootShakeImpulseEuler.x * strength;
