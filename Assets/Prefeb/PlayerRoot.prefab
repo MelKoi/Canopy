@@ -13,7 +13,7 @@ GameObject:
   m_Layer: 0
   m_Name: PlayerRoot
   m_TagString: Untagged
-  m_Icon: {fileID: 0}
+  m_Icon: {fileID: -5442936267250999957, guid: 0000000000000000d000000000000000, type: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
@@ -26,7 +26,7 @@ Transform:
   m_GameObject: {fileID: 462212220712930575}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -0.69671, y: 0, z: 1.49758}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -528,12 +528,12 @@ PrefabInstance:
     - target: {fileID: 1891974770696749133, guid: 0974bf4286f9cd540b1e16c4ba49df49,
         type: 3}
       propertyPath: m_LocalPosition.x
-      value: 0.11
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 1891974770696749133, guid: 0974bf4286f9cd540b1e16c4ba49df49,
         type: 3}
       propertyPath: m_LocalPosition.y
-      value: 10.8
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 1891974770696749133, guid: 0974bf4286f9cd540b1e16c4ba49df49,
         type: 3}
@@ -577,58 +577,13 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 3268843634863619008, guid: 0974bf4286f9cd540b1e16c4ba49df49,
         type: 3}
-      propertyPath: bodyTransform
-      value: 
-      objectReference: {fileID: 7447137357112720080}
-    - target: {fileID: 3387470511315865329, guid: 0974bf4286f9cd540b1e16c4ba49df49,
-        type: 3}
-      propertyPath: m_LocalRotation.w
-      value: 0.99790436
+      propertyPath: jumpVelocity
+      value: 20
       objectReference: {fileID: 0}
-    - target: {fileID: 3387470511315865329, guid: 0974bf4286f9cd540b1e16c4ba49df49,
+    - target: {fileID: 3268843634863619008, guid: 0974bf4286f9cd540b1e16c4ba49df49,
         type: 3}
-      propertyPath: m_LocalRotation.x
-      value: 0.06470646
-      objectReference: {fileID: 0}
-    - target: {fileID: 3387470511315865329, guid: 0974bf4286f9cd540b1e16c4ba49df49,
-        type: 3}
-      propertyPath: m_LocalEulerAnglesHint.x
-      value: 7.42
-      objectReference: {fileID: 0}
-    - target: {fileID: 5257181765831762103, guid: 0974bf4286f9cd540b1e16c4ba49df49,
-        type: 3}
-      propertyPath: m_LocalPosition.y
-      value: -0.86911774
-      objectReference: {fileID: 0}
-    - target: {fileID: 5257181765831762103, guid: 0974bf4286f9cd540b1e16c4ba49df49,
-        type: 3}
-      propertyPath: m_LocalPosition.z
-      value: -1.1237066
-      objectReference: {fileID: 0}
-    - target: {fileID: 5257181765831762103, guid: 0974bf4286f9cd540b1e16c4ba49df49,
-        type: 3}
-      propertyPath: m_LocalRotation.w
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 5257181765831762103, guid: 0974bf4286f9cd540b1e16c4ba49df49,
-        type: 3}
-      propertyPath: m_LocalRotation.x
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 5257181765831762103, guid: 0974bf4286f9cd540b1e16c4ba49df49,
-        type: 3}
-      propertyPath: m_LocalRotation.y
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 5257181765831762103, guid: 0974bf4286f9cd540b1e16c4ba49df49,
-        type: 3}
-      propertyPath: m_LocalRotation.z
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 5257181765831762103, guid: 0974bf4286f9cd540b1e16c4ba49df49,
-        type: 3}
-      propertyPath: m_LocalEulerAnglesHint.x
-      value: 0
+      propertyPath: groundCheckRadius
+      value: 0.45
       objectReference: {fileID: 0}
     - target: {fileID: 7760291223895797318, guid: 0974bf4286f9cd540b1e16c4ba49df49,
         type: 3}
@@ -694,12 +649,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 55f43b0bad95670489a909ebcd29f875, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::LockOnSystem
---- !u!4 &7447137357112720080 stripped
-Transform:
-  m_CorrespondingSourceObject: {fileID: 4293977078405673171, guid: 0974bf4286f9cd540b1e16c4ba49df49,
-    type: 3}
-  m_PrefabInstance: {fileID: 6687509679996963331}
-  m_PrefabAsset: {fileID: 0}
 --- !u!114 &8184040428872610243 stripped
 MonoBehaviour:
   m_CorrespondingSourceObject: {fileID: 3268843634863619008, guid: 0974bf4286f9cd540b1e16c4ba49df49,

@@ -131,8 +131,8 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 517631483273747076}
   serializedVersion: 2
-  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: -0.11, y: -0.69, z: 0.58}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: -0.11, y: -0.86911774, z: -1.1237066}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -321,13 +321,13 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1241032727624540617}
   serializedVersion: 2
-  m_LocalRotation: {x: 0.043619405, y: 0, z: 0, w: 0.9990483}
+  m_LocalRotation: {x: 0.06470646, y: 0, z: 0, w: 0.99790436}
   m_LocalPosition: {x: 0.16, y: 1.53, z: -3.02}
   m_LocalScale: {x: 1.5, y: 1.5, z: 1.5}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 5257181765831762103}
-  m_LocalEulerAnglesHint: {x: 5, y: 0, z: 0}
+  m_LocalEulerAnglesHint: {x: 7.42, y: 0, z: 0}
 --- !u!1 &1249480947537055149
 GameObject:
   m_ObjectHideFlags: 0
@@ -1286,7 +1286,7 @@ Transform:
   m_GameObject: {fileID: 2788201372865377984}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: -2.9, z: 0.86}
+  m_LocalPosition: {x: 0.04, y: -2.702, z: 0.94}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -1572,6 +1572,12 @@ MonoBehaviour:
   sensitivity: {x: 0.12, y: 0.12}
   verticalClamp: {x: -30, y: 60}
   offset: {x: 0, y: 1, z: -12}
+  bodyTurnYawFollowSmoothTime: 0.08
+  mechController: {fileID: 0}
+  normalFOV: 60
+  sprintFOV: 68
+  fovLerpSpeed: 8
+  cameraForFOV: {fileID: 0}
 --- !u!1 &2944144841452111062
 GameObject:
   m_ObjectHideFlags: 0
@@ -4667,6 +4673,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::FrontAimController
   lockOnSystem: {fileID: 0}
   rotateSpeed: 360
+  aimYawReference: {fileID: 2242873966595987254}
 --- !u!1 &7569451524576981400
 GameObject:
   m_ObjectHideFlags: 0
@@ -4910,7 +4917,7 @@ Transform:
   m_GameObject: {fileID: 7760291223895797318}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 2.56, z: 0}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 1
   m_Children:
@@ -4997,6 +5004,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::MechController
   input: {fileID: 4524572385175039535}
   cameraTransform: {fileID: 2242873966595987254}
+  bodyTransform: {fileID: 4293977078405673171}
   groundProfile: {fileID: 11400000, guid: 3b0e699eb6e8a6146b8ac242ece91fdc, type: 2}
   boostProfile: {fileID: 11400000, guid: 6322eeebe78ea724d9053673142f86f8, type: 2}
   overBoostProfile: {fileID: 11400000, guid: 2d628849964d5444aad17052bf297b8d, type: 2}
@@ -5009,8 +5017,13 @@ MonoBehaviour:
   groundCheck: {fileID: 3265394239957599825}
   groundMask:
     serializedVersion: 2
-    m_Bits: 0
-  groundCheckDistance: 1
+    m_Bits: 8
+  groundCheckRadius: 0.45
+  groundCheckOffsetFromCenter: 0.6
+  jumpVelocity: 20
+  jumpAscendCooldownTime: 0.25
+  groundCheckFollowTransform: {fileID: 6222920385069423904}
+  groundCheckFollowLocalOffset: {x: 0, y: -3, z: 0}
 --- !u!1 &7769349554006906775
 GameObject:
   m_ObjectHideFlags: 0

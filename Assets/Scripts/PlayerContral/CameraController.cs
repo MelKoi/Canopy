@@ -33,7 +33,14 @@ public class CameraController : MonoBehaviour
     [Tooltip("用于改 FOV 的相机，不设则用同物体上的 Camera")]
     public Camera cameraForFOV;
 
+    [Header("开火屏幕震动")]
+    [Tooltip("每次开火绕各轴随机抖动（度），轻微即可")]
+    public Vector3 shootShakeImpulseEuler = new Vector3(0.38f, 0.3f, 0.14f);
+    [Tooltip("震动衰减，越大越快停稳")]
+    public float shootShakeDecay = 16f;
+
     Camera _cam;
+    Vector3 _shootShakeEuler;
     float _yaw;
     float _pitch;
     bool _hasSyncedFromCamera;
@@ -60,17 +67,19 @@ public class CameraController : MonoBehaviour
             _pitch = Mathf.Clamp(_pitch, verticalClamp.x, verticalClamp.y);
         }
 
-        Quaternion rotation = Quaternion.Euler(_pitch, _yaw, 0f);
+        Quaternion baseRot = Quaternion.Euler(_pitch, _yaw, 0f);
+        _shootShakeEuler = Vector3.Lerp(_shootShakeEuler, Vector3.zero, Time.deltaTime * shootShakeDecay);
+        Quaternion rotation = baseRot * Quaternion.Euler(_shootShakeEuler);
 
         if (transform.parent != null)
         {
-            transform.localPosition = rotation * offset;
+            transform.localPosition = baseRot * offset;
             transform.localRotation = rotation;
         }
         else
         {
             if (target == null) return;
-            transform.position = target.position + rotation * offset;
+            transform.position = target.position + baseRot * offset;
             transform.rotation = rotation;
         }
 
@@ -115,5 +124,13 @@ public class CameraController : MonoBehaviour
     {
         _yaw = newYaw;
         _pitch = Mathf.Clamp(newPitch, verticalClamp.x, verticalClamp.y);
+    }
+
+    /// <summary>武器开火时调用，产生轻微屏幕抖动感。</summary>
+    public void AddShootScreenShake(float strength = 1f)
+    {
+        _shootShakeEuler.x += (Random.value * 2f - 1f) * shootShakeImpulseEuler.x * strength;
+        _shootShakeEuler.y += (Random.value * 2f - 1f) * shootShakeImpulseEuler.y * strength;
+        _shootShakeEuler.z += (Random.value * 2f - 1f) * shootShakeImpulseEuler.z * strength;
     }
 }

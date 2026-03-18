@@ -1,64 +1,103 @@
 using UnityEngine;
 
+/// <summary>
+/// ??·???????????/???Q/E????? ????????????????????????Q????硢E????硣
+/// ???θ??嵯????????????????????? CameraController ??????
+/// </summary>
 public class WeaponRaycastShooter : MonoBehaviour
 {
+    [Header("?????")]
     public Transform front;
-
-    [Header("Weapon Mounts")]
     public Transform leftGun;
     public Transform rightGun;
     public Transform leftShoulder;
     public Transform rightShoulder;
 
-    public float range = 300f;
-    public LayerMask hitMask;
+    [Tooltip("???????????????????????rightGun ??")]
+    public Transform overrideFireLMB;
+    public Transform overrideFireRMB;
+    public Transform overrideFireQ;
+    public Transform overrideFireE;
 
-    //public LineRenderer debugLine; // 可选
+    [Header("???")]
+    [Tooltip("????????????????? Main Camera")]
+    public Camera aimCamera;
+
+    [Header("????")]
+    [Range(300f, 500f)]
+    public float bulletSpeed = 420f;
+    public float bulletDiameter = 0.06f;
+    public float spawnForward = 0.35f;
+    public float maxBulletRange = 400f;
+
+    public LayerMask bulletHitMask = ~0;
+
+    [Header("?????")]
+    public CameraController cameraShake;
+
+    Transform _lmb, _rmb, _q, _e;
+    Collider[] _selfColliders;
+
+    void Awake()
+    {
+        _lmb = overrideFireLMB != null ? overrideFireLMB : rightGun;
+        _rmb = overrideFireRMB != null ? overrideFireRMB : leftGun;
+        _q = overrideFireQ != null ? overrideFireQ : leftShoulder;
+        _e = overrideFireE != null ? overrideFireE : rightShoulder;
+
+        _selfColliders = GetComponentsInChildren<Collider>(true);
+        if (aimCamera == null)
+            aimCamera = Camera.main;
+        if (cameraShake == null && aimCamera != null)
+            cameraShake = aimCamera.GetComponent<CameraController>();
+        if (cameraShake == null)
+            cameraShake = FindFirstObjectByType<CameraController>();
+    }
 
     void Update()
     {
-        if (Input.GetMouseButtonDown(0))
-        {
-            Fire(leftGun);
-        }
-
-        if (Input.GetMouseButtonDown(1))
-        {
-            Fire(rightGun);
-        }
-        if (Input.GetKeyDown(KeyCode.Q))
-        {
-            Fire(leftShoulder);
-        }
-
-        if (Input.GetKeyDown(KeyCode.E))
-        {
-            Fire(rightShoulder);
-        }
+        if (Input.GetMouseButtonDown(0) && _lmb != null)
+            FireFrom(_lmb);
+        if (Input.GetMouseButtonDown(1) && _rmb != null)
+            FireFrom(_rmb);
+        if (Input.GetKeyDown(KeyCode.Q) && _q != null)
+            FireFrom(_q);
+        if (Input.GetKeyDown(KeyCode.E) && _e != null)
+            FireFrom(_e);
     }
 
-    void Fire(Transform firePoint)
+    void FireFrom(Transform muzzle)
     {
-        Vector3 origin = firePoint.position;
-        Vector3 dir = front.forward;
+        Vector3 dir = GetAimDirection(muzzle.position);
+        float life = maxBulletRange / Mathf.Max(bulletSpeed, 1f) + 0.5f;
 
-        Ray ray = new Ray(origin, dir);
-        RaycastHit hit;
+        var go = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+        go.name = "Bullet";
+        go.layer = gameObject.layer;
+        go.transform.position = muzzle.position + dir * spawnForward;
+        go.transform.localScale = Vector3.one * bulletDiameter;
 
-        Debug.DrawRay(origin, dir * range, Color.red, 3f);
+        var proj = go.AddComponent<ProjectileBullet>();
+        proj.Setup(bulletSpeed, dir, _selfColliders, life);
 
-        if (Physics.Raycast(ray, out hit, range, hitMask))
-        {
-            Debug.Log("Hit: " + hit.collider.name);
-
-            // 命中反馈（临时）
-            CreateHitEffect(hit.point, hit.normal);
-        }
+        cameraShake?.AddShootScreenShake(1f);
     }
 
-    void CreateHitEffect(Vector3 pos, Vector3 normal)
+    Vector3 GetAimDirection(Vector3 fromWorld)
     {
-        // 现在可以先留空，或 Debug.DrawRay
-        Debug.DrawRay(pos, normal, Color.yellow, 1f);
+        if (aimCamera != null)
+        {
+            Ray r = aimCamera.ViewportPointToRay(new Vector3(0.5f, 0.5f, 0f));
+            Vector3 hit = r.origin + r.direction * 2000f;
+            if (Physics.Raycast(r, out RaycastHit rh, 2000f, bulletHitMask, QueryTriggerInteraction.Ignore))
+                hit = rh.point;
+            Vector3 d = hit - fromWorld;
+            if (d.sqrMagnitude > 0.0001f)
+                return d.normalized;
+            return r.direction.normalized;
+        }
+        if (front != null)
+            return front.forward;
+        return transform.forward;
     }
 }
