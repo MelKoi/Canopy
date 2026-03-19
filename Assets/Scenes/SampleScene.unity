@@ -132,7 +132,7 @@ GameObject:
   - component: {fileID: 229942706}
   - component: {fileID: 229942705}
   - component: {fileID: 229942709}
-  m_Layer: 3
+  m_Layer: 0
   m_Name: EnemyRoot
   m_TagString: Enemy
   m_Icon: {fileID: 0}
@@ -644,21 +644,6 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
-    - target: {fileID: 402922007577451238, guid: aefd466c62fe6a64da44a16085783098,
-        type: 3}
-      propertyPath: aimCamera
-      value: 
-      objectReference: {fileID: 1684787886}
-    - target: {fileID: 402922007577451238, guid: aefd466c62fe6a64da44a16085783098,
-        type: 3}
-      propertyPath: cameraShake
-      value: 
-      objectReference: {fileID: 1684787882}
-    - target: {fileID: 402922007577451238, guid: aefd466c62fe6a64da44a16085783098,
-        type: 3}
-      propertyPath: bulletHitMask.m_Bits
-      value: 4294967295
-      objectReference: {fileID: 0}
     - target: {fileID: 462212220712930575, guid: aefd466c62fe6a64da44a16085783098,
         type: 3}
       propertyPath: m_Name
@@ -713,21 +698,6 @@ PrefabInstance:
         type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 8184040428872610243, guid: aefd466c62fe6a64da44a16085783098,
-        type: 3}
-      propertyPath: jumpVelocity
-      value: 20
-      objectReference: {fileID: 0}
-    - target: {fileID: 8184040428872610243, guid: aefd466c62fe6a64da44a16085783098,
-        type: 3}
-      propertyPath: groundCheckRadius
-      value: 0.38
-      objectReference: {fileID: 0}
-    - target: {fileID: 8184040428872610243, guid: aefd466c62fe6a64da44a16085783098,
-        type: 3}
-      propertyPath: jumpPeelUpAcceleration
-      value: 15
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -841,24 +811,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &1684787882 stripped
-MonoBehaviour:
-  m_CorrespondingSourceObject: {fileID: 4318742775674779564, guid: aefd466c62fe6a64da44a16085783098,
-    type: 3}
-  m_PrefabInstance: {fileID: 940873877}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 0aa67a9c7fac9c743be90df0d51e4bda, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::CameraController
---- !u!20 &1684787886 stripped
-Camera:
-  m_CorrespondingSourceObject: {fileID: 567139106015478174, guid: aefd466c62fe6a64da44a16085783098,
-    type: 3}
-  m_PrefabInstance: {fileID: 940873877}
-  m_PrefabAsset: {fileID: 0}
 --- !u!1 &1857989775
 GameObject:
   m_ObjectHideFlags: 0

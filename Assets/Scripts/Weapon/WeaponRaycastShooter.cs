@@ -22,6 +22,8 @@ public class WeaponRaycastShooter : MonoBehaviour
     [Header("瞄准")]
     [Tooltip("屏幕中心射线，一般填 Main Camera")]
     public Camera aimCamera;
+    [Tooltip("锁定系统：有锁定目标时子弹会辅助瞄准并轻微制导")]
+    public LockOnSystem lockOnSystem;
 
     [Header("弹体")]
     [Range(300f, 500f)]
@@ -52,6 +54,8 @@ public class WeaponRaycastShooter : MonoBehaviour
             cameraShake = aimCamera.GetComponent<CameraController>();
         if (cameraShake == null)
             cameraShake = FindFirstObjectByType<CameraController>();
+        if (lockOnSystem == null)
+            lockOnSystem = FindFirstObjectByType<LockOnSystem>();
     }
 
     void Update()
@@ -78,13 +82,21 @@ public class WeaponRaycastShooter : MonoBehaviour
         go.transform.localScale = Vector3.one * bulletDiameter;
 
         var proj = go.AddComponent<ProjectileBullet>();
-        proj.Setup(bulletSpeed, dir, _selfColliders, life);
+        Transform homingTarget = lockOnSystem != null ? lockOnSystem.currentTarget : null;
+        proj.Setup(bulletSpeed, dir, _selfColliders, life, homingTarget);
 
         cameraShake?.AddShootScreenShake(1f);
     }
 
     Vector3 GetAimDirection(Vector3 fromWorld)
     {
+        if (lockOnSystem != null && lockOnSystem.currentTarget != null)
+        {
+            Vector3 d = lockOnSystem.currentTarget.position - fromWorld;
+            if (d.sqrMagnitude > 0.0001f)
+                return d.normalized;
+        }
+
         if (aimCamera != null)
         {
             Ray r = aimCamera.ViewportPointToRay(new Vector3(0.5f, 0.5f, 0f));

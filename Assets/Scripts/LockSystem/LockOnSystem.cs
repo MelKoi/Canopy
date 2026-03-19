@@ -1,12 +1,20 @@
-﻿using UnityEngine;
+using UnityEngine;
 
-public class LockOnSystem : MonoBehaviour//在一定范围内锁定敌人（只锁定单个敌人）
+/// <summary>
+/// 单目标锁定：当敌人进入准星附近一定距离（视口半径）时锁定，敌人身上由 LockOnUI 显示锁定框。
+/// </summary>
+public class LockOnSystem : MonoBehaviour
 {
     public Camera cam;
-    public Rect lockRect = new Rect(0.4f, 0.4f, 0.2f, 0.2f); // 归一化屏幕空间
-    public LayerMask enemyLayer;
+    [Tooltip("准星中心 (0.5,0.5) 周围的锁定半径（视口 0~1），敌人在此范围内即锁定")]
+    [Range(0.02f, 0.3f)]
+    public float lockRadiusViewport = 0.08f;
+    [Tooltip("敌人 Tag，用于检测可锁定目标")]
+    public string enemyTag = "Enemy";
+    [Tooltip("检测敌人的世界空间半径")]
+    public float detectRadius = 100f;
 
-    public Transform currentTarget;
+    public Transform currentTarget { get; private set; }
 
     void Update()
     {
@@ -14,33 +22,50 @@ public class LockOnSystem : MonoBehaviour//在一定范围内锁定敌人（只�
             DetectEnemy();
     }
 
-    void LateUpdate()//敌人没有位移或者高速移出锁定范围时，保持追踪（硬锁定）
+    void LateUpdate()
     {
         if (currentTarget == null) return;
 
         Vector3 viewportPos = cam.WorldToViewportPoint(currentTarget.position);
-
-        if (!lockRect.Contains(new Vector2(viewportPos.x, viewportPos.y)))
+        if (viewportPos.z < 0)
         {
-            currentTarget = null; // 丢失锁定
+            currentTarget = null;
+            return;
         }
-    }
 
+        float dx = viewportPos.x - 0.5f;
+        float dy = viewportPos.y - 0.5f;
+        if (dx * dx + dy * dy > lockRadiusViewport * lockRadiusViewport)
+            currentTarget = null;
+    }
 
     void DetectEnemy()
     {
-        Collider[] enemies = Physics.OverlapSphere(transform.position, 100f, enemyLayer);//此API返回一个以玩家机体为圆心，参数2为半径，满足enemylayer条件的collider集合
-        foreach (var e in enemies)//对于上述API获取到的集合中的每一项
-        {
-            Vector3 screenPos = cam.WorldToViewportPoint(e.transform.position);
-            if (screenPos.z < 0) continue;
+        Collider[] all = Physics.OverlapSphere(transform.position, detectRadius);
+        Vector2 center = new Vector2(0.5f, 0.5f);
+        float r2 = lockRadiusViewport * lockRadiusViewport;
+        float bestDist2 = float.MaxValue;
+        Transform best = null;
 
-            if (lockRect.Contains(new Vector2(screenPos.x, screenPos.y)))//如果敌人在这个矩形范围内
+        foreach (var c in all)
+        {
+            if (!c.CompareTag(enemyTag)) continue;
+
+            Vector3 vp = cam.WorldToViewportPoint(c.transform.position);
+            if (vp.z < 0) continue;
+
+            float dx = vp.x - center.x;
+            float dy = vp.y - center.y;
+            float d2 = dx * dx + dy * dy;
+            if (d2 <= r2 && d2 < bestDist2)
             {
-                currentTarget = e.transform;//锁定目标
-                break;
+                bestDist2 = d2;
+                best = c.transform;
             }
         }
+
+        if (best != null)
+            currentTarget = best;
     }
 }
 
