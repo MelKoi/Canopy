@@ -1,7 +1,7 @@
 using UnityEngine;
 
 /// <summary>
-/// 球形弹体：直线飞行，可选轻微制导；碰撞后销毁；击中敌人时敌人变粉红 1 秒后消失。
+/// 球形弹体：直线飞行，可选轻微制导；碰撞后销毁；击中带 EnemyHitFeedback 的敌人按累计命中处理，否则 Tag 敌人单次击杀；带尾迹可视化。
 /// </summary>
 [RequireComponent(typeof(Rigidbody))]
 public class ProjectileBullet : MonoBehaviour
@@ -9,6 +9,7 @@ public class ProjectileBullet : MonoBehaviour
     float _maxLifetime = 3f;
     float _speed;
     Transform _homingTarget;
+    Rigidbody _rb;
     [Tooltip("制导强度，越大子弹越会拐向锁定目标")]
     const float HomingStrength = 4f;
 
@@ -19,14 +20,14 @@ public class ProjectileBullet : MonoBehaviour
         _speed = speed;
         _homingTarget = homingTarget;
 
-        var rb = GetComponent<Rigidbody>();
-        if (rb == null)
-            rb = gameObject.AddComponent<Rigidbody>();
-        rb.mass = 0.02f;
-        rb.useGravity = false;
-        rb.collisionDetectionMode = CollisionDetectionMode.ContinuousDynamic;
-        rb.interpolation = RigidbodyInterpolation.Interpolate;
-        rb.velocity = direction.normalized * speed;
+        _rb = GetComponent<Rigidbody>();
+        if (_rb == null)
+            _rb = gameObject.AddComponent<Rigidbody>();
+        _rb.mass = 0.02f;
+        _rb.useGravity = false;
+        _rb.collisionDetectionMode = CollisionDetectionMode.ContinuousDynamic;
+        _rb.interpolation = RigidbodyInterpolation.Interpolate;
+        _rb.velocity = direction.normalized * speed;
 
         var col = GetComponent<Collider>();
         if (col != null && ignoreColliders != null)
@@ -37,6 +38,62 @@ public class ProjectileBullet : MonoBehaviour
                     Physics.IgnoreCollision(col, c, true);
             }
         }
+
+        float d = transform.localScale.x;
+        var trail = gameObject.AddComponent<TrailRenderer>();
+        ConfigureReadableTrail(trail, d,
+            new Color(0.55f, 0.92f, 1f, 1f),
+            new Color(0.2f, 0.55f, 1f, 0.05f));
+    }
+
+    /// <summary>高对比度弹体材质（URP Unlit / Lit 回退）。</summary>
+    public static void ApplyBrightBody(Renderer rend, Color baseColor, Color emissionHdr)
+    {
+        if (rend == null)
+            return;
+
+        Shader sh = Shader.Find("Universal Render Pipeline/Unlit");
+        if (sh == null)
+            sh = Shader.Find("Universal Render Pipeline/Lit");
+        if (sh == null)
+            sh = Shader.Find("Unlit/Color");
+        if (sh == null)
+            sh = Shader.Find("Sprites/Default");
+
+        var mat = new Material(sh);
+        if (mat.HasProperty("_BaseColor"))
+            mat.SetColor("_BaseColor", baseColor);
+        else
+            mat.color = baseColor;
+
+        if (mat.HasProperty("_EmissionColor"))
+        {
+            mat.EnableKeyword("_EMISSION");
+            mat.SetColor("_EmissionColor", emissionHdr);
+        }
+
+        rend.material = mat;
+    }
+
+    public static void ConfigureReadableTrail(TrailRenderer trail, float diameter, Color start, Color end)
+    {
+        trail.time = 0.5f;
+        trail.minVertexDistance = 0.02f;
+        trail.numCapVertices = 5;
+        trail.numCornerVertices = 4;
+        trail.startWidth = Mathf.Max(0.04f, diameter * 1.15f);
+        trail.endWidth = Mathf.Max(0.02f, diameter * 0.2f);
+
+        Shader tsh = Shader.Find("Universal Render Pipeline/Particles/Unlit");
+        if (tsh == null)
+            tsh = Shader.Find("Particles/Standard Unlit");
+        if (tsh == null)
+            tsh = Shader.Find("Sprites/Default");
+        trail.material = new Material(tsh);
+        if (trail.material.HasProperty("_BaseColor"))
+            trail.material.SetColor("_BaseColor", start);
+        trail.startColor = start;
+        trail.endColor = end;
     }
 
     float _t;
@@ -50,14 +107,13 @@ public class ProjectileBullet : MonoBehaviour
             return;
         }
 
-        if (_homingTarget != null)
+        if (_homingTarget != null && _rb != null)
         {
-            var rb = GetComponent<Rigidbody>();
             Vector3 toTarget = _homingTarget.position - transform.position;
             if (toTarget.sqrMagnitude > 0.01f)
             {
                 Vector3 desired = toTarget.normalized * _speed;
-                rb.velocity = Vector3.Lerp(rb.velocity, desired, HomingStrength * Time.deltaTime);
+                _rb.velocity = Vector3.Lerp(_rb.velocity, desired, HomingStrength * Time.deltaTime);
             }
         }
     }
@@ -98,7 +154,7 @@ public class ProjectileBullet : MonoBehaviour
             if (r.material != null)
             {
                 var mat = new Material(r.material);
-                mat.color = new Color(1f, 0.41f, 0.71f); // 粉红色
+                mat.color = EnemyHitFeedback.HitColor;
                 r.material = mat;
             }
         }

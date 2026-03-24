@@ -17,7 +17,7 @@ public class EntryCameraSequence : MonoBehaviour//入场动画脚本
         cam.transform.position = mech.position;
         cam.transform.rotation = mech.rotation;
 
-        yield return StartCoroutine(ScreenFadeIn());
+        yield return ScreenFadeIn();
 
         // 拉远到第三人称
         Vector3 startPos = cam.transform.position;

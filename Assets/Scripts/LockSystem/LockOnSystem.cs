@@ -16,6 +16,15 @@ public class LockOnSystem : MonoBehaviour
 
     public Transform currentTarget { get; private set; }
 
+    float LockRadiusSq => lockRadiusViewport * lockRadiusViewport;
+
+    float ViewportDistSqFromCenter(Vector3 viewportPos)
+    {
+        float dx = viewportPos.x - 0.5f;
+        float dy = viewportPos.y - 0.5f;
+        return dx * dx + dy * dy;
+    }
+
     void Update()
     {
         if (currentTarget == null)
@@ -42,8 +51,7 @@ public class LockOnSystem : MonoBehaviour
     void DetectEnemy()
     {
         Collider[] all = Physics.OverlapSphere(transform.position, detectRadius);
-        Vector2 center = new Vector2(0.5f, 0.5f);
-        float r2 = lockRadiusViewport * lockRadiusViewport;
+        float r2 = LockRadiusSq;
         float bestDist2 = float.MaxValue;
         Transform best = null;
 
@@ -54,9 +62,7 @@ public class LockOnSystem : MonoBehaviour
             Vector3 vp = cam.WorldToViewportPoint(c.transform.position);
             if (vp.z < 0) continue;
 
-            float dx = vp.x - center.x;
-            float dy = vp.y - center.y;
-            float d2 = dx * dx + dy * dy;
+            float d2 = ViewportDistSqFromCenter(vp);
             if (d2 <= r2 && d2 < bestDist2)
             {
                 bestDist2 = d2;
