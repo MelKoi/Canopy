@@ -15,4 +15,4 @@ MonoBehaviour:
   maxSpeed: 8
   acceleration: 18
   deceleration: 35
-  energyCostPerSecond: 15
+  energyCostPerSecond: 10

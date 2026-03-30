@@ -1147,7 +1147,7 @@ Transform:
   m_GameObject: {fileID: 2500203712161372932}
   serializedVersion: 2
   m_LocalRotation: {x: 0.6812998, y: 0.33702427, z: 0.3057052, w: 0.5734018}
-  m_LocalPosition: {x: 1.04, y: 0.27, z: -0.79999954}
+  m_LocalPosition: {x: 0.89, y: 0.4, z: -0.77}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -5007,8 +5007,8 @@ MonoBehaviour:
     type: 2}
   dodgeProfile: {fileID: 11400000, guid: d609ad8dd6f352e4b89b852564baf70e, type: 2}
   maxEnergy: 100
-  energyRegen: 25
-  energyRegenInSky: 5
+  energyRegen: 30
+  energyRegenInSky: 10
   groundCheck: {fileID: 3265394239957599825}
   groundMask:
     serializedVersion: 2
@@ -5977,7 +5977,7 @@ Transform:
   m_GameObject: {fileID: 9025100527907452446}
   serializedVersion: 2
   m_LocalRotation: {x: 0.7200638, y: -0.24343961, z: -0.18929009, w: 0.6216225}
-  m_LocalPosition: {x: 1.15, y: -0.13, z: -0.79999816}
+  m_LocalPosition: {x: 1.09, y: -0.24, z: -0.82}
   m_LocalScale: {x: 0.92913556, y: 0.9997219, z: 1.0762442}
   m_ConstrainProportionsScale: 0
   m_Children: []

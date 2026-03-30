@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1d6bb02f37793534db45673d267a10c8, type: 3}
   m_Name: Boost
   m_EditorClassIdentifier: Assembly-CSharp::MovementProfile
-  maxSpeed: 25
+  maxSpeed: 17
   acceleration: 40
   deceleration: 30
   energyCostPerSecond: 0

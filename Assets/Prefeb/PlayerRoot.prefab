@@ -124,6 +124,7 @@ GameObject:
   - component: {fileID: 402922007577451238}
   - component: {fileID: 8123456789012345}
   - component: {fileID: 2129835584253835909}
+  - component: {fileID: 9191919191919191}
   m_Layer: 0
   m_Name: PlayerRoot
   m_TagString: Untagged
@@ -220,6 +221,21 @@ MonoBehaviour:
   textRmb: {fileID: 8427794568634363971}
   textQ: {fileID: 8035915091313911442}
   textE: {fileID: 7311898458365922877}
+--- !u!114 &9191919191919191
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 462212220712930575}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d8f5ba2c408e5f7b0d2e1f4a6b8c0d3e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PlayerMechBodyEmission
+  emissionColor: {r: 0.25, g: 0.45, b: 0.65, a: 1}
+  emissionMultiplier: 0.25
+  uiRootToExclude: {fileID: 1490047240778144500}
 --- !u!1 &1685308529415178579
 GameObject:
   m_ObjectHideFlags: 0
