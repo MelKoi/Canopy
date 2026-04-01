@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using TMPro;
 using UnityEngine;
@@ -6,7 +7,8 @@ using UnityEngine.SceneManagement;
 
 /// <summary>
 /// 关卡开场教学第一步：叙事（UI 上层）+ 左侧中部半透明紫面板提示。
-/// 若未在 Inspector 绑定 UI，运行时会自动生成 Canvas + 叙事文本 + 左侧面板（紫底、字不透明）。
+/// 优先绑定场景根下 <c>Story</c> 中的 <c>Sayer</c> / <c>Saying</c> / <c>Teach</c>（名称不区分大小写）；
+/// 若仍有缺引用且 <see cref="autoBuildUiWhenMissing"/> 为 true，再自动生成 UI。
 /// Boost → Jump 覆盖顺序由触发器保证；Jump 文案显示 jumpHintDuration 秒后关闭面板。
 /// </summary>
 public class LevelTutorialStep1 : MonoBehaviour
@@ -57,14 +59,63 @@ public class LevelTutorialStep1 : MonoBehaviour
     bool _jumpTeachHandled;
     bool _boostTeachHandled;
     Coroutine _jumpRoutine;
+    bool _runtimeGeneratedHintBackdrop;
 
     void Awake()
     {
+        TryBindStoryUiIfNeeded();
         if (autoBuildUiWhenMissing)
             EnsureRuntimeUi();
 
         ApplyHintPanelChrome();
         ApplyInitialUIState();
+    }
+
+    void TryBindStoryUiIfNeeded()
+    {
+        bool needAny = narrativeTitleText == null || narrativeBodyText == null
+                       || hintPanelRoot == null || hintText == null;
+        if (!needAny)
+            return;
+
+        Scene s = gameObject.scene;
+        if (!s.IsValid())
+            return;
+
+        Transform story = null;
+        foreach (var root in s.GetRootGameObjects())
+        {
+            story = FindTransformByNameRecursive(root.transform, "Story");
+            if (story != null)
+                break;
+        }
+
+        if (story == null)
+            return;
+
+        Transform sayerT = FindTransformByNameRecursive(story, "Sayer");
+        Transform sayingT = FindTransformByNameRecursive(story, "Saying");
+        Transform teachT = FindTransformByNameRecursive(story, "Teach");
+
+        if (narrativeTitleText == null && sayerT != null)
+            narrativeTitleText = sayerT.GetComponent<TextMeshProUGUI>()
+                                 ?? sayerT.GetComponentInChildren<TextMeshProUGUI>(true);
+        if (narrativeBodyText == null && sayingT != null)
+            narrativeBodyText = sayingT.GetComponent<TextMeshProUGUI>()
+                                ?? sayingT.GetComponentInChildren<TextMeshProUGUI>(true);
+        if (hintPanelRoot == null && teachT != null)
+            hintPanelRoot = teachT.gameObject;
+        if (hintPanelBackdrop == null && teachT != null)
+            hintPanelBackdrop = teachT.GetComponent<Image>();
+        if (hintText == null && teachT != null)
+        {
+            var tmps = teachT.GetComponentsInChildren<TextMeshProUGUI>(true);
+            for (int i = 0; i < tmps.Length; i++)
+            {
+                hintText = tmps[i];
+                break;
+            }
+        }
     }
 
     void EnsureRuntimeUi()
@@ -83,11 +134,23 @@ public class LevelTutorialStep1 : MonoBehaviour
         {
             foreach (GameObject root in s.GetRootGameObjects())
             {
-                Transform t = FindTransformByNameRecursive(root.transform, "Teaching");
+                Transform t = FindTransformByNameRecursive(root.transform, "Story");
                 if (t != null)
                 {
                     uiParent = t;
                     break;
+                }
+            }
+            if (uiParent == transform)
+            {
+                foreach (GameObject root in s.GetRootGameObjects())
+                {
+                    Transform t = FindTransformByNameRecursive(root.transform, "Teaching");
+                    if (t != null)
+                    {
+                        uiParent = t;
+                        break;
+                    }
                 }
             }
         }
@@ -166,6 +229,7 @@ public class LevelTutorialStep1 : MonoBehaviour
         hintPanelBackdrop.type = Image.Type.Simple;
         hintPanelBackdrop.color = hintBackdropColor;
         hintPanelBackdrop.raycastTarget = false;
+        _runtimeGeneratedHintBackdrop = true;
 
         GameObject hintGo = CreateTmpObject("HintLabel", hintPanelRoot.transform, font, 24f,
             TextAlignmentOptions.MidlineLeft, false);
@@ -212,7 +276,7 @@ public class LevelTutorialStep1 : MonoBehaviour
 
     void ApplyHintPanelChrome()
     {
-        if (hintPanelBackdrop != null)
+        if (hintPanelBackdrop != null && _runtimeGeneratedHintBackdrop)
             hintPanelBackdrop.color = hintBackdropColor;
 
         if (hintText != null)
@@ -352,7 +416,7 @@ public class LevelTutorialStep1 : MonoBehaviour
 
     static Transform FindTransformByNameRecursive(Transform t, string objectName)
     {
-        if (t.name == objectName)
+        if (string.Equals(t.name, objectName, StringComparison.OrdinalIgnoreCase))
             return t;
         for (int i = 0; i < t.childCount; i++)
         {

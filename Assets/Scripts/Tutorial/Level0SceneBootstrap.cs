@@ -1,9 +1,11 @@
+using System;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
+
 /// <summary>
-/// 每次进入 Level_0 时确保：TwilightAtmosphere、Teaching 画布、LevelTutorial 存在。
-/// 解决首包场景不是 Level_0 或后续异步加载时，仅 AfterSceneLoad 执行一次导致教程与氛围未创建的问题。
+/// 每次进入 Level_0 时确保：教程用 UI 画布（场景内 <c>Story</c> 优先，否则可选创建 <c>Teaching</c>）、LevelTutorial 存在。
+/// 黄昏氛围由场景中手动挂载的 <see cref="TwilightSceneAtmosphere"/> 等负责。
 /// </summary>
 static class Level0SceneBootstrap
 {
@@ -19,7 +21,6 @@ static class Level0SceneBootstrap
         if (scene.name != "Level_0")
             return;
 
-        EnsureTwilightAtmosphere(scene);
         EnsureTeachingCanvas(scene);
         EnsureTutorial(scene);
     }
@@ -30,40 +31,10 @@ static class Level0SceneBootstrap
             SceneManager.MoveGameObjectToScene(go, scene);
     }
 
-    static void EnsureTwilightAtmosphere(Scene scene)
-    {
-        TwilightSceneAtmosphere existing = null;
-        foreach (var a in Object.FindObjectsByType<TwilightSceneAtmosphere>(FindObjectsInactive.Include, FindObjectsSortMode.None))
-        {
-            if (a.gameObject.scene == scene)
-            {
-                existing = a;
-                break;
-            }
-        }
-
-        if (existing != null)
-        {
-            existing.TryAutoAssignDirectionalLight();
-            existing.ReapplyEnvironmentAndDirectional();
-            existing.RefreshRuntimeVolumeExposure();
-            return;
-        }
-
-        var go = new GameObject("TwilightAtmosphere");
-        MoveToScene(go, scene);
-        var tw = go.AddComponent<TwilightSceneAtmosphere>();
-        tw.proceduralExposure = 0.95f;
-        tw.ambientIntensity = 0.64f;
-        tw.reflectionIntensity = 0.58f;
-        tw.generatedPostExposure = -0.48f;
-        tw.TryAutoAssignDirectionalLight();
-        tw.ReapplyEnvironmentAndDirectional();
-        tw.RefreshRuntimeVolumeExposure();
-    }
-
     static void EnsureTeachingCanvas(Scene scene)
     {
+        if (SceneContainsTransformNamed(scene, "Story"))
+            return;
         if (SceneContainsTransformNamed(scene, "Teaching"))
             return;
 
@@ -83,15 +54,35 @@ static class Level0SceneBootstrap
 
     static void EnsureTutorial(Scene scene)
     {
-        foreach (var t in Object.FindObjectsByType<LevelTutorialStep1>(FindObjectsInactive.Include, FindObjectsSortMode.None))
+        // 场景里已经有任何一个 LevelTutorialStep1，就不再动它（支持你手动挂在任意物体上）
+        foreach (var t in UnityEngine.Object.FindObjectsByType<LevelTutorialStep1>(FindObjectsInactive.Include, FindObjectsSortMode.None))
         {
             if (t.gameObject.scene == scene)
                 return;
         }
 
-        var go = new GameObject("LevelTutorial");
+        // 尝试优先使用你场景中名为 "tutorial" 的物体作为宿主（名称不区分大小写）
+        Transform tutorialHost = null;
+        foreach (var root in scene.GetRootGameObjects())
+        {
+            tutorialHost = FindTransformByNameRecursive(root.transform, "tutorial");
+            if (tutorialHost != null)
+                break;
+        }
+
+        GameObject go;
+        if (tutorialHost != null)
+        {
+            go = tutorialHost.gameObject;
+        }
+        else
+        {
+            go = new GameObject("LevelTutorial");
+        }
+
         MoveToScene(go, scene);
-        go.AddComponent<LevelTutorialStep1>();
+        if (go.GetComponent<LevelTutorialStep1>() == null)
+            go.AddComponent<LevelTutorialStep1>();
     }
 
     static bool SceneContainsTransformNamed(Scene scene, string objectName)
@@ -106,7 +97,7 @@ static class Level0SceneBootstrap
 
     static bool TransformNamedRecursive(Transform t, string objectName)
     {
-        if (t.name == objectName)
+        if (string.Equals(t.name, objectName, StringComparison.OrdinalIgnoreCase))
             return true;
         for (int i = 0; i < t.childCount; i++)
         {
@@ -114,5 +105,19 @@ static class Level0SceneBootstrap
                 return true;
         }
         return false;
+    }
+
+    // 简单版本：仅供在本类中查找 Transform（名称不区分大小写）
+    static Transform FindTransformByNameRecursive(Transform t, string objectName)
+    {
+        if (string.Equals(t.name, objectName, StringComparison.OrdinalIgnoreCase))
+            return t;
+        for (int i = 0; i < t.childCount; i++)
+        {
+            var found = FindTransformByNameRecursive(t.GetChild(i), objectName);
+            if (found != null)
+                return found;
+        }
+        return null;
     }
 }
