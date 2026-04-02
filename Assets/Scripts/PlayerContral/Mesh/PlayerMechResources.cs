@@ -82,11 +82,20 @@ public class PlayerMechResources : MonoBehaviour
     /// <summary>被敌人子弹命中时调用。</summary>
     public void RegisterEnemyProjectileHit()
     {
+        RegisterEnemyProjectileHit(-1, -1);
+    }
+
+    /// <param name="healthDamage">扣血；&lt; 0 时使用 <see cref="healthDamagePerEnemyHit"/></param>
+    /// <param name="toughnessDelta">韧性增量；&lt; 0 时使用 <see cref="toughnessGainPerEnemyHit"/></param>
+    public void RegisterEnemyProjectileHit(int healthDamage, int toughnessDelta)
+    {
         if (_health <= 0)
             return;
 
-        _health -= healthDamagePerEnemyHit;
-        _toughness = Mathf.Min(maxToughness, _toughness + toughnessGainPerEnemyHit);
+        int hd = healthDamage >= 0 ? healthDamage : healthDamagePerEnemyHit;
+        int td = toughnessDelta >= 0 ? toughnessDelta : toughnessGainPerEnemyHit;
+        _health -= Mathf.Max(0, hd);
+        _toughness = Mathf.Min(maxToughness, _toughness + Mathf.Max(0, td));
 
         if (_health <= 0)
         {

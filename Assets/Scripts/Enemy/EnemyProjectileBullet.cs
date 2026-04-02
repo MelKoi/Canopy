@@ -9,11 +9,16 @@ public class EnemyProjectileBullet : MonoBehaviour
     float _maxLifetime = 6f;
     float _speed;
     Rigidbody _rb;
+    int _healthDamage = -1;
+    int _toughnessDelta = -1;
 
-    public void Setup(float speed, Vector3 direction, Collider[] ignoreColliders, float maxLifetime)
+    public void Setup(float speed, Vector3 direction, Collider[] ignoreColliders, float maxLifetime,
+        int healthDamage = -1, int toughnessDelta = -1)
     {
         _maxLifetime = maxLifetime;
         _speed = speed;
+        _healthDamage = healthDamage;
+        _toughnessDelta = toughnessDelta;
 
         _rb = GetComponent<Rigidbody>();
         if (_rb == null)
@@ -48,7 +53,7 @@ public class EnemyProjectileBullet : MonoBehaviour
     {
         var resources = collision.gameObject.GetComponentInParent<PlayerMechResources>();
         if (resources != null)
-            resources.RegisterEnemyProjectileHit();
+            resources.RegisterEnemyProjectileHit(_healthDamage, _toughnessDelta);
 
         Destroy(gameObject);
     }

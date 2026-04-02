@@ -1,11 +1,14 @@
 using UnityEngine;
 
 /// <summary>
-/// 测试敌人：5m 内、无遮挡时每隔 2 秒向玩家发射可见子弹。
+/// 测试敌人：5m 内、无遮挡时每隔若干秒向玩家发射可见子弹；可选原地朝向玩家后再开火。
 /// </summary>
 public class TestEnemyCombat : MonoBehaviour, IEnemyPatrolSuspendCondition
 {
     [HideInInspector] public int spawnPointIndex;
+
+    [Tooltip("为 false 时不会在 3 号刷新点击败后上报测试关卡进度")]
+    public bool reportBossFromPoint3 = true;
 
     [Header("感知 / 开火")]
     public float detectionRadius = 5f;
@@ -16,15 +19,46 @@ public class TestEnemyCombat : MonoBehaviour, IEnemyPatrolSuspendCondition
     public float aimHeightOffset = 1f;
     public LayerMask lineOfSightMask = ~0;
 
+    [Header("静止教学 / 朝向")]
+    [Tooltip("关闭巡逻组件，不位移")]
+    public bool stationaryNoPatrol;
+    [Tooltip("水平旋转本体使 enemyfront 指向玩家")]
+    public bool facePlayerWhenEngaged;
+    [Tooltip("仅当正面已对准玩家时才允许开火")]
+    public bool requireFacingToFire;
+    public float faceTurnSpeedDeg = 360f;
+    public float fireFacingMaxAngleDeg = 15f;
+
+    [Header("子弹对玩家（<0 表示用 PlayerMechResources 默认值）")]
+    public int projectileHealthDamage = -1;
+    public int projectileToughnessDelta = -1;
+
     MechController _playerMech;
     Collider _selfCol;
     float _nextFireTime;
     EnemyHitFeedback _feedback;
+    Transform _enemyFront;
 
     void Awake()
     {
         _selfCol = GetComponent<Collider>();
         _feedback = GetComponent<EnemyHitFeedback>();
+        if (stationaryNoPatrol)
+        {
+            var patrol = GetComponent<EnemyPatrolAgent>();
+            if (patrol != null)
+                patrol.enabled = false;
+        }
+
+        _enemyFront = null;
+        var agent = GetComponent<EnemyPatrolAgent>();
+        if (agent != null && agent.enemyFront != null)
+            _enemyFront = agent.enemyFront;
+        if (_enemyFront == null)
+        {
+            var t = transform.Find("enemyfront") ?? transform.Find("Enemyfront");
+            _enemyFront = t;
+        }
     }
 
     void OnEnable()
@@ -41,7 +75,7 @@ public class TestEnemyCombat : MonoBehaviour, IEnemyPatrolSuspendCondition
 
     void HandleFinalHitCommitted()
     {
-        if (spawnPointIndex == 3)
+        if (reportBossFromPoint3 && spawnPointIndex == 3)
             TestLevelProgress.MarkBossFromPoint3Defeated();
     }
 
@@ -52,6 +86,12 @@ public class TestEnemyCombat : MonoBehaviour, IEnemyPatrolSuspendCondition
             return;
 
         if (!TryBuildEngagement(out Vector3 dirToPlayer))
+            return;
+
+        if (facePlayerWhenEngaged)
+            FacePlayerHorizontally(dirToPlayer, Time.deltaTime);
+
+        if (requireFacingToFire && !IsFacingPlayerWithinAngle(dirToPlayer))
             return;
 
         if (Time.time < _nextFireTime)
@@ -108,6 +148,56 @@ public class TestEnemyCombat : MonoBehaviour, IEnemyPatrolSuspendCondition
         return t == playerRoot || t.IsChildOf(playerRoot);
     }
 
+    void FacePlayerHorizontally(Vector3 dirToPlayerWorld, float dt)
+    {
+        Vector3 want = dirToPlayerWorld;
+        want.y = 0f;
+        if (want.sqrMagnitude < 0.0001f)
+            return;
+        want.Normalize();
+
+        Vector3 face;
+        if (_enemyFront != null)
+        {
+            face = _enemyFront.position - transform.position;
+            face.y = 0f;
+        }
+        else
+            face = transform.forward;
+        face.y = 0f;
+
+        if (face.sqrMagnitude < 0.0001f)
+            return;
+
+        float signed = Vector3.SignedAngle(face.normalized, want, Vector3.up);
+        float maxStep = faceTurnSpeedDeg * dt;
+        transform.Rotate(0f, Mathf.Clamp(signed, -maxStep, maxStep), 0f, Space.World);
+    }
+
+    bool IsFacingPlayerWithinAngle(Vector3 dirToPlayerWorld)
+    {
+        Vector3 want = dirToPlayerWorld;
+        want.y = 0f;
+        if (want.sqrMagnitude < 0.0001f)
+            return true;
+        want.Normalize();
+
+        Vector3 face;
+        if (_enemyFront != null)
+        {
+            face = _enemyFront.position - transform.position;
+            face.y = 0f;
+        }
+        else
+            face = transform.forward;
+        face.y = 0f;
+
+        if (face.sqrMagnitude < 0.0001f)
+            return true;
+
+        return Vector3.Angle(face.normalized, want) <= fireFacingMaxAngleDeg;
+    }
+
     void FireToward(Vector3 dir)
     {
         Vector3 pos = transform.position + dir * spawnForward;
@@ -129,6 +219,6 @@ public class TestEnemyCombat : MonoBehaviour, IEnemyPatrolSuspendCondition
         float life = Mathf.Max(8f, detectionRadius * 2f / Mathf.Max(bulletSpeed, 1f));
         var proj = go.AddComponent<EnemyProjectileBullet>();
         Collider[] ignore = _selfCol != null ? new[] { _selfCol } : null;
-        proj.Setup(bulletSpeed, dir, ignore, life);
+        proj.Setup(bulletSpeed, dir, ignore, life, projectileHealthDamage, projectileToughnessDelta);
     }
 }

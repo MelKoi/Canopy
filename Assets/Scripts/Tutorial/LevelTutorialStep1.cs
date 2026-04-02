@@ -56,10 +56,17 @@ public class LevelTutorialStep1 : MonoBehaviour
     [TextArea] public string hintJump = "使用空格进行跳跃";
     [TextArea] public string hintBoost = "按下ctrl进行加速推进。";
 
+    [Header("战斗教学触发（FightTeaching）")]
+    [TextArea] public string fightTeachingSayer = "李秋烛";
+    [TextArea] public string fightTeachingSaying = "看起来敌人还是安排了些许守卫，干掉他们吧。";
+    public float fightTeachingNarrativeSeconds = 1f;
+
     bool _jumpTeachHandled;
     bool _boostTeachHandled;
     Coroutine _jumpRoutine;
     bool _runtimeGeneratedHintBackdrop;
+    bool _fightTeachingHandled;
+    Coroutine _fightTeachingRoutine;
 
     void Awake()
     {
@@ -393,6 +400,52 @@ public class LevelTutorialStep1 : MonoBehaviour
             hintText.text = hintBoost;
             hintText.color = Opaque(hintLabelColor);
         }
+    }
+
+    public void NotifyFightTeachingEntered()
+    {
+        if (_fightTeachingHandled)
+            return;
+        _fightTeachingHandled = true;
+
+        if (_fightTeachingRoutine != null)
+            StopCoroutine(_fightTeachingRoutine);
+        _fightTeachingRoutine = StartCoroutine(FightTeachingNarrativeRoutine());
+    }
+
+    IEnumerator FightTeachingNarrativeRoutine()
+    {
+        if (narrativeTitleText != null)
+        {
+            narrativeTitleText.text = fightTeachingSayer;
+            narrativeTitleText.color = Opaque(narrativeTitleColor);
+            narrativeTitleText.gameObject.SetActive(true);
+        }
+
+        if (narrativeBodyText != null)
+        {
+            narrativeBodyText.text = fightTeachingSaying;
+            narrativeBodyText.color = Opaque(narrativeBodyColor);
+            narrativeBodyText.gameObject.SetActive(true);
+        }
+
+        if (narrativeRoot != null)
+            narrativeRoot.SetActive(true);
+
+        float wait = Mathf.Max(0.05f, fightTeachingNarrativeSeconds);
+        yield return new WaitForSeconds(wait);
+
+        if (narrativeRoot != null)
+            narrativeRoot.SetActive(false);
+        else
+        {
+            if (narrativeTitleText != null)
+                narrativeTitleText.gameObject.SetActive(false);
+            if (narrativeBodyText != null)
+                narrativeBodyText.gameObject.SetActive(false);
+        }
+
+        _fightTeachingRoutine = null;
     }
 
     IEnumerator JumpHintRoutine()
