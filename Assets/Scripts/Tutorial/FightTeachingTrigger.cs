@@ -11,8 +11,15 @@ public class FightTeachingTrigger : MonoBehaviour
 {
     public GameObject noMoveEnemyPrefab;
     public LevelTutorialStep1 tutorial;
-    [Tooltip("在生成点本地 Y 上额外抬高（米）")]
-    public float spawnHeightOffset = 1.35f;
+    [Tooltip("在吸附地面后的世界 Y 上再抬高（米），一般保持 0")]
+    public float spawnHeightOffset;
+    [Tooltip("从刷新点向上偏移后再向下打射线找地面")]
+    public float groundSnapRayStartUp = 4f;
+    [Tooltip("向下射线最大长度")]
+    public float groundSnapMaxDistance = 120f;
+    [Tooltip("命中地面后，根物体在命中点之上的高度；≤0 时按预制体 CapsuleCollider 与缩放自动算（推荐 0）")]
+    public float enemyRootYAboveGround;
+    public LayerMask groundSnapMask = ~0;
 
     bool _done;
 
@@ -61,7 +68,7 @@ public class FightTeachingTrigger : MonoBehaviour
         for (int i = 0; i < points.Count; i++)
         {
             Transform pt = points[i];
-            Vector3 pos = pt.position + Vector3.up * spawnHeightOffset;
+            Vector3 pos = GetSpawnPosition(pt);
             var instance = Instantiate(noMoveEnemyPrefab, pos, pt.rotation);
             var combat = instance.GetComponent<TestEnemyCombat>();
             if (combat != null)
@@ -70,6 +77,35 @@ public class FightTeachingTrigger : MonoBehaviour
                 combat.reportBossFromPoint3 = false;
             }
         }
+    }
+
+    Vector3 GetSpawnPosition(Transform pt)
+    {
+        Vector3 p = pt.position;
+        Vector3 origin = p + Vector3.up * Mathf.Max(0.05f, groundSnapRayStartUp);
+        if (Physics.Raycast(origin, Vector3.down, out RaycastHit hit, groundSnapMaxDistance, groundSnapMask,
+                QueryTriggerInteraction.Ignore))
+        {
+            float lift = enemyRootYAboveGround > 0.01f
+                ? enemyRootYAboveGround
+                : ComputeCapsuleBottomToRootLift(noMoveEnemyPrefab);
+            p = hit.point + Vector3.up * lift;
+        }
+
+        return p + Vector3.up * spawnHeightOffset;
+    }
+
+    static float ComputeCapsuleBottomToRootLift(GameObject prefab)
+    {
+        if (prefab == null)
+            return 1f;
+        var cap = prefab.GetComponent<CapsuleCollider>();
+        if (cap == null)
+            return 1f;
+        float sy = Mathf.Abs(prefab.transform.lossyScale.y);
+        if (cap.direction != 1)
+            return Mathf.Max(0.05f, cap.bounds.extents.y);
+        return Mathf.Max(0.05f, cap.center.y * sy + cap.height * 0.5f * sy);
     }
 
     static List<Transform> CollectSpawnPoints(Transform battleRoot)

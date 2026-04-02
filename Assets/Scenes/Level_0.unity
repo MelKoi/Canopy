@@ -14863,7 +14863,13 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   noMoveEnemyPrefab: {fileID: 5455249886221273249, guid: f7e8d9c0b1a2435162738495a6b7c8d9, type: 3}
   tutorial: {fileID: 1227847559}
-  spawnHeightOffset: 1.35
+  spawnHeightOffset: 0
+  groundSnapRayStartUp: 4
+  groundSnapMaxDistance: 120
+  enemyRootYAboveGround: 0
+  groundSnapMask:
+    serializedVersion: 2
+    m_Bits: 4294967295
 --- !u!1001 &537143479
 PrefabInstance:
   m_ObjectHideFlags: 0

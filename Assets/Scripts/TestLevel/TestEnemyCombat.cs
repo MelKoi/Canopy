@@ -12,6 +12,8 @@ public class TestEnemyCombat : MonoBehaviour, IEnemyPatrolSuspendCondition
 
     [Header("感知 / 开火")]
     public float detectionRadius = 5f;
+    [Tooltip("为 false 时只要距离内即视为可交战（射线易被场景几何挡住）")]
+    public bool requireLineOfSight = true;
     public float fireInterval = 2f;
     public float bulletSpeed = 35f;
     public float bulletDiameter = 0.24f;
@@ -132,7 +134,7 @@ public class TestEnemyCombat : MonoBehaviour, IEnemyPatrolSuspendCondition
         if (dist > detectionRadius || dist < 0.01f)
             return false;
 
-        if (!HasClearLineOfSight(from, delta.normalized, dist, aim.root))
+        if (requireLineOfSight && !HasClearLineOfSight(from, delta.normalized, dist, aim.root))
             return false;
 
         dirToPlayerNormalized = delta.normalized;
