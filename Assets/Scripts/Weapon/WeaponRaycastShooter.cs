@@ -43,11 +43,14 @@ public class WeaponRaycastShooter : MonoBehaviour
     public int magazineSize = 30;
     public float reloadDuration = 2f;
     public KeyCode reloadKey = KeyCode.R;
+    [Tooltip("按下 R 后，在此时间内再按对应武器开火键才会换该槽弹匣")]
+    public float reloadComboWindow = 1.2f;
 
     Transform _lmb, _rmb, _q, _e;
     Collider[] _selfColliders;
     int[] _ammo;
     float[] _reloadEndTime;
+    float _reloadComboUntil = -1f;
 
     void Awake()
     {
@@ -83,12 +86,29 @@ public class WeaponRaycastShooter : MonoBehaviour
         }
 
         if (Input.GetKeyDown(reloadKey))
-            TryReloadAll();
+            _reloadComboUntil = Time.time + reloadComboWindow;
+        if (_reloadComboUntil > 0f && Time.time > _reloadComboUntil)
+            _reloadComboUntil = -1f;
 
-        TryFire(Input.GetMouseButtonDown(0), _lmb, 0);
-        TryFire(Input.GetMouseButtonDown(1), _rmb, 1);
-        TryFire(Input.GetKeyDown(KeyCode.Q), _q, 2);
-        TryFire(Input.GetKeyDown(KeyCode.E), _e, 3);
+        bool comboActive = _reloadComboUntil > Time.time;
+        bool reloadUsed = false;
+        if (comboActive)
+        {
+            if (Input.GetMouseButtonDown(0) && TryReloadSlotOnly(0)) reloadUsed = true;
+            else if (Input.GetMouseButtonDown(1) && TryReloadSlotOnly(1)) reloadUsed = true;
+            else if (Input.GetKeyDown(KeyCode.Q) && TryReloadSlotOnly(2)) reloadUsed = true;
+            else if (Input.GetKeyDown(KeyCode.E) && TryReloadSlotOnly(3)) reloadUsed = true;
+            if (reloadUsed)
+                _reloadComboUntil = -1f;
+        }
+
+        if (!reloadUsed)
+        {
+            TryFire(Input.GetMouseButtonDown(0), _lmb, 0);
+            TryFire(Input.GetMouseButtonDown(1), _rmb, 1);
+            TryFire(Input.GetKeyDown(KeyCode.Q), _q, 2);
+            TryFire(Input.GetKeyDown(KeyCode.E), _e, 3);
+        }
     }
 
     public int GetMagazineAmmo(int slot)
@@ -105,19 +125,16 @@ public class WeaponRaycastShooter : MonoBehaviour
         return _reloadEndTime[slot] > Time.time;
     }
 
-    void TryReloadAll()
+    bool TryReloadSlotOnly(int slot)
     {
-        if (_ammo == null)
-            return;
-        float t = Time.time;
-        for (int i = 0; i < 4; i++)
-        {
-            if (_reloadEndTime[i] > t)
-                continue;
-            if (_ammo[i] >= magazineSize)
-                continue;
-            _reloadEndTime[i] = t + reloadDuration;
-        }
+        if (_ammo == null || slot < 0 || slot >= _ammo.Length)
+            return false;
+        if (IsReloadingSlot(slot))
+            return false;
+        if (_ammo[slot] >= magazineSize)
+            return false;
+        _reloadEndTime[slot] = Time.time + reloadDuration;
+        return true;
     }
 
     bool TryConsumeAmmo(int slot)

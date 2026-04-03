@@ -116,6 +116,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 5257181765831762103}
+  - component: {fileID: 3847291058374619284}
   m_Layer: 0
   m_Name: CameraRig
   m_TagString: Untagged
@@ -140,6 +141,20 @@ Transform:
   - {fileID: 3387470511315865329}
   m_Father: {fileID: 1891974770696749133}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &3847291058374619284
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 517631483273747076}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7c8e9a0b1d2e3f4059687a6b5c4d3e2f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::CameraRigVerticalLag
+  mechRoot: {fileID: 1891974770696749133}
+  verticalSmoothTime: 0.28
 --- !u!1 &847462805933281592
 GameObject:
   m_ObjectHideFlags: 0
@@ -1569,13 +1584,25 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::CameraController
   enableInput: 1
   target: {fileID: 1891974770696749133}
-  sensitivity: {x: 0.12, y: 0.12}
+  sensitivity: {x: 0.114, y: 0.114}
   verticalClamp: {x: -30, y: 60}
-  offset: {x: 0, y: 1, z: -12}
+  offset: {x: 0.38, y: 1.28, z: -11.5}
+  mouseDeadZonePixels: 0.8
+  yawSmoothTime: 0.09
+  pitchSmoothTime: 0.08
+  yawSmoothTimeBoostMul: 1.45
+  pitchSmoothTimeBoostMul: 1.35
+  lockOnSystem: {fileID: 866611877416364951}
+  disableCameraAssistWhileLocked: 1
+  softLockAssistStrength: 1.1
+  softLockAssistMaxMouseDelta: 1.25
+  boostOffsetPullBack: 1.35
+  boostPullSmoothTime: 0.12
   bodyTurnYawFollowSmoothTime: 0.08
-  mechController: {fileID: 0}
+  mechController: {fileID: 3268843634863619008}
   normalFOV: 60
   sprintFOV: 68
+  quickBoostFOVBonus: 2.5
   fovLerpSpeed: 8
   cameraForFOV: {fileID: 0}
   shootShakeImpulseEuler: {x: 0.38, y: 0.3, z: 0.14}
@@ -4973,6 +5000,8 @@ MonoBehaviour:
   lockRadiusViewport: 0.08
   enemyTag: Enemy
   detectRadius: 100
+  hardLockPickRadiusViewport: 0.22
+  hardLockMaxDistance: 120
 --- !u!114 &4524572385175039535
 MonoBehaviour:
   m_ObjectHideFlags: 0

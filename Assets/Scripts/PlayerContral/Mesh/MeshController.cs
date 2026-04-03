@@ -56,6 +56,8 @@ public class MechController : MonoBehaviour
     public float CurrentEnergy => currentEnergy;
     public float MaxEnergy => maxEnergy;
     public bool IsSprinting => isOverBoosting;
+    /// <summary>快速推进（Ctrl 触发的地面加速段），用于镜头 FOV 等。</summary>
+    public bool IsQuickBoosting => isBoosting && !isOverBoosting && !isDodging;
 
     void Awake()
     {
