@@ -5044,14 +5044,17 @@ MonoBehaviour:
     m_Bits: 8
   groundCheckRadius: 0.45
   groundCheckOffsetFromCenter: 0.6
-  jumpVelocity: 20
+  jumpVelocity: 8
   jumpAscendCooldownTime: 0.25
-  jumpGroundPeelDuration: 0.14
-  jumpPeelUpAcceleration: 12
+  jumpGroundPeelDuration: 0.1
+  jumpPeelUpAcceleration: 6
   jumpGroundProbeLift: 0.22
   jumpInputBuffer: 0.12
   groundCheckFollowTransform: {fileID: 6222920385069423904}
   groundCheckFollowLocalOffset: {x: 0, y: -3, z: 0}
+  airborneGravityMultiplier: 1.12
+  jumpAscentCounterAccel: 4
+  airHorizontalAccelScale: 0.38
 --- !u!1 &7769349554006906775
 GameObject:
   m_ObjectHideFlags: 0

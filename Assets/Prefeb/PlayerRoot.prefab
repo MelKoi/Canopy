@@ -234,8 +234,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d8f5ba2c408e5f7b0d2e1f4a6b8c0d3e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PlayerMechBodyEmission
-  emissionColor: {r: 0.25, g: 0.45, b: 0.65, a: 1}
-  emissionMultiplier: 0.25
+  emissionColor: {r: 0.3, g: 0.5, b: 0.75, a: 1}
+  emissionMultiplier: 0.18
+  rimPower: 6
   uiRootToExclude: {fileID: 1490047240778144500}
 --- !u!1 &1685308529415178579
 GameObject:
@@ -1679,7 +1680,7 @@ PrefabInstance:
     - target: {fileID: 3268843634863619008, guid: 0974bf4286f9cd540b1e16c4ba49df49,
         type: 3}
       propertyPath: jumpVelocity
-      value: 20
+      value: 8
       objectReference: {fileID: 0}
     - target: {fileID: 3268843634863619008, guid: 0974bf4286f9cd540b1e16c4ba49df49,
         type: 3}
@@ -1689,7 +1690,7 @@ PrefabInstance:
     - target: {fileID: 3268843634863619008, guid: 0974bf4286f9cd540b1e16c4ba49df49,
         type: 3}
       propertyPath: jumpPeelUpAcceleration
-      value: 15
+      value: 6
       objectReference: {fileID: 0}
     - target: {fileID: 7760291223895797318, guid: 0974bf4286f9cd540b1e16c4ba49df49,
         type: 3}

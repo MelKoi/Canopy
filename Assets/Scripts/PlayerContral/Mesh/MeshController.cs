@@ -25,17 +25,28 @@ public class MechController : MonoBehaviour
     public LayerMask groundMask;
     public float groundCheckRadius = 0.4f;
     public float groundCheckOffsetFromCenter = 0.6f;
-    public float jumpVelocity = 7f;
+    [Tooltip("起跳瞬时竖直速度；重型机甲宜 7~10（原错误用过大会像火箭）")]
+    public float jumpVelocity = 8f;
     [Tooltip("起跳后短时内不触发长按升空")]
     public float jumpAscendCooldownTime = 0.25f;
     [Tooltip("起跳后：检测上移 + 竖直上推，减轻挤地；起跳仍用未抬升检测")]
-    public float jumpGroundPeelDuration = 0.14f;
-    public float jumpPeelUpAcceleration = 12f;
+    public float jumpGroundPeelDuration = 0.1f;
+    [Tooltip("离地后极短时间内额外上推加速度，宜偏小以免发飘")]
+    public float jumpPeelUpAcceleration = 6f;
     public float jumpGroundProbeLift = 0.22f;
     [Tooltip("缓解 Update / FixedUpdate 不同步漏跳")]
     public float jumpInputBuffer = 0.12f;
     public Transform groundCheckFollowTransform;
     public Vector3 groundCheckFollowLocalOffset = new Vector3(0f, -2.7f, 0f);
+
+    [Header("空中 — 重型手感")]
+    [Tooltip("相对项目重力的倍数，略大于 1 下落更快、更“砸地”")]
+    public float airborneGravityMultiplier = 1.12f;
+    [Tooltip("上升阶段额外减速（米/秒²），模拟大质量爬升阻力")]
+    public float jumpAscentCounterAccel = 4f;
+    [Tooltip("非垂直推进时，空中水平加/减速相对地面的比例（越小越笨重）")]
+    [Range(0.15f, 1f)]
+    public float airHorizontalAccelScale = 0.38f;
 
     Rigidbody rb;
     MovementProfile currentProfile;
@@ -173,21 +184,27 @@ public class MechController : MonoBehaviour
         if (!isDodging && _peelTimer > 0f && currentProfile != verticalBoostProfile)
         {
             vy = rb.velocity.y + jumpPeelUpAcceleration * Time.fixedDeltaTime;
-            if (isGrounded && vy < jumpVelocity * 0.85f)
-                vy = Mathf.Max(vy, jumpVelocity * 0.92f);
+            if (isGrounded && vy < jumpVelocity * 0.55f)
+                vy = Mathf.Max(vy, jumpVelocity * 0.72f);
         }
         else if (!isGrounded && currentProfile == verticalBoostProfile)
             vy = currentProfile.maxSpeed;
         else if (!isGrounded)
         {
-            float decayTo = rb.velocity.y > 0f ? 0f : rb.velocity.y + Physics.gravity.y * Time.fixedDeltaTime;
-            vy = Mathf.MoveTowards(rb.velocity.y, decayTo, currentProfile.deceleration * Time.fixedDeltaTime);
+            float g = Physics.gravity.y * airborneGravityMultiplier;
+            vy = rb.velocity.y + g * Time.fixedDeltaTime;
+            if (vy > 0f && jumpAscentCounterAccel > 0f)
+                vy = Mathf.Max(0f, vy - jumpAscentCounterAccel * Time.fixedDeltaTime);
         }
         else
             vy = rb.velocity.y;
 
-        float acc = currentProfile.acceleration * Time.fixedDeltaTime;
-        float dec = currentProfile.deceleration * Time.fixedDeltaTime;
+        float horizScale = 1f;
+        if (!isGrounded && !isDodging && !isOverBoosting && currentProfile != verticalBoostProfile)
+            horizScale = airHorizontalAccelScale;
+
+        float acc = currentProfile.acceleration * horizScale * Time.fixedDeltaTime;
+        float dec = currentProfile.deceleration * horizScale * Time.fixedDeltaTime;
         Vector2 cur = new Vector2(rb.velocity.x, rb.velocity.z);
         Vector2 tar = new Vector2(tv.x, tv.z);
         Vector2 horz = Vector2.MoveTowards(cur, tar, tar.sqrMagnitude <= cur.sqrMagnitude + 0.001f ? dec : acc);
