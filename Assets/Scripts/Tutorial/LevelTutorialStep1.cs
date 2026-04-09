@@ -1,5 +1,6 @@
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -10,6 +11,7 @@ using UnityEngine.SceneManagement;
 /// 优先绑定场景根下 <c>Story</c> 中的 <c>Sayer</c> / <c>Saying</c> / <c>Teach</c>（名称不区分大小写）；
 /// 若仍有缺引用且 <see cref="autoBuildUiWhenMissing"/> 为 true，再自动生成 UI。
 /// Boost → Jump 覆盖顺序由触发器保证；Jump 文案显示 jumpHintDuration 秒后关闭面板。
+/// FlyTeaching：叙事后弹出 Teach；flyTeachingHintDuration≤0 时不自动关闭 Teach。
 /// </summary>
 public class LevelTutorialStep1 : MonoBehaviour
 {
@@ -56,17 +58,39 @@ public class LevelTutorialStep1 : MonoBehaviour
     [TextArea] public string hintJump = "使用空格进行跳跃";
     [TextArea] public string hintBoost = "按下ctrl进行加速推进。";
 
+    [Header("浮空教学（FlyTeaching）")]
+    [TextArea] public string flyTeachingSayer = "李秋烛";
+    [TextArea] public string flyTeachingSaying = "能看到前面的平台了吗，迅速飞到那里去。";
+    public float flyTeachingNarrativeSeconds = 2f;
+    [TextArea] public string flyTeachingHint = "长按空格进行浮空。";
+    [Tooltip("Teach 显示秒数；≤0 则保持显示，直至其它教学改写或关闭面板")]
+    public float flyTeachingHintDuration;
+
     [Header("战斗教学触发（FightTeaching）")]
-    [TextArea] public string fightTeachingSayer = "李秋烛";
-    [TextArea] public string fightTeachingSaying = "看起来敌人还是安排了些许守卫，干掉他们吧。";
-    public float fightTeachingNarrativeSeconds = 1f;
+    [TextArea] public string fightTeachingOpenSayer = "李秋烛";
+    [TextArea] public string fightTeachingOpenSaying = "看起来敌人还是安排了些许守卫，干掉他们吧。";
+    public float fightTeachingOpenNarrativeSeconds = 2f;
+    [TextArea] public string fightTeachingShootHint =
+        "按下 Q、E、鼠标左键和鼠标右键进行射击，分别对应左肩武器、右肩武器、左手武器和右手武器。";
+    [TextArea] public string fightTeachingReloadHint = "先按下 R，再按下对应位置可以进行换弹。";
+    [TextArea] public string fightTeachingCompleteSayer = "李秋烛";
+    [TextArea] public string fightTeachingCompleteSaying = "看来这边的门被锁死了，飞上去看看情况吧。";
+    [Tooltip("最后一名敌人被击败后，稍候再弹出叙事，便于阅读换弹提示")]
+    public float fightTeachingEndDelaySeconds = 1.6f;
+    public float fightTeachingCompleteNarrativeSeconds = 3f;
 
     bool _jumpTeachHandled;
     bool _boostTeachHandled;
     Coroutine _jumpRoutine;
+    bool _flyTeachHandled;
+    Coroutine _flyRoutine;
     bool _runtimeGeneratedHintBackdrop;
     bool _fightTeachingHandled;
     Coroutine _fightTeachingRoutine;
+    int _fightTeachingTotal;
+    int _fightTeachingKills;
+    bool _fightTeachingReloadHintShown;
+    bool _fightTeachingCompleteStarted;
 
     void Awake()
     {
@@ -74,6 +98,7 @@ public class LevelTutorialStep1 : MonoBehaviour
         if (autoBuildUiWhenMissing)
             EnsureRuntimeUi();
 
+        TrySyncTeachFontWithNarrative();
         ApplyHintPanelChrome();
         ApplyInitialUIState();
     }
@@ -123,6 +148,22 @@ public class LevelTutorialStep1 : MonoBehaviour
                 break;
             }
         }
+    }
+
+    /// <summary>
+    /// Teach 与叙事共用 Story 时，统一使用 Saying 的 SDF，避免 Teach 仍指向缺字字体而出现「□」。
+    /// </summary>
+    void TrySyncTeachFontWithNarrative()
+    {
+        if (hintText == null || narrativeBodyText == null)
+            return;
+        if (narrativeBodyText.font == null)
+            return;
+        if (hintText.font == narrativeBodyText.font &&
+            hintText.fontSharedMaterial == narrativeBodyText.fontSharedMaterial)
+            return;
+        hintText.font = narrativeBodyText.font;
+        hintText.fontSharedMaterial = narrativeBodyText.fontSharedMaterial;
     }
 
     void EnsureRuntimeUi()
@@ -298,34 +339,27 @@ public class LevelTutorialStep1 : MonoBehaviour
 
     void ApplyInitialUIState()
     {
-        if (narrativeRoot != null)
-            narrativeRoot.SetActive(false);
-        else
-        {
-            if (narrativeTitleText != null)
-                narrativeTitleText.gameObject.SetActive(false);
-            if (narrativeBodyText != null)
-                narrativeBodyText.gameObject.SetActive(false);
-        }
+        HideNarrativeLines();
 
         if (hintPanelRoot != null)
             hintPanelRoot.SetActive(false);
     }
 
-    IEnumerator Start()
+    /// <summary>
+    /// 与关卡开场「代号长夜…」相同的显示顺序与颜色；不改动字号/对齐等 Inspector 设置。
+    /// </summary>
+    void ShowNarrativeLines(string title, string body)
     {
-        yield return new WaitForSeconds(delayBeforeNarrative);
-
         if (narrativeTitleText != null)
         {
-            narrativeTitleText.text = titleContent;
+            narrativeTitleText.text = title;
             narrativeTitleText.color = Opaque(narrativeTitleColor);
             narrativeTitleText.gameObject.SetActive(true);
         }
 
         if (narrativeBodyText != null)
         {
-            narrativeBodyText.text = bodyLine1;
+            narrativeBodyText.text = body;
             narrativeBodyText.color = Opaque(narrativeBodyColor);
             narrativeBodyText.gameObject.SetActive(true);
         }
@@ -333,13 +367,21 @@ public class LevelTutorialStep1 : MonoBehaviour
         if (narrativeRoot != null)
             narrativeRoot.SetActive(true);
 
-        yield return new WaitForSeconds(narrativeLine1Duration);
+        RefreshNarrativeMeshes();
+    }
 
-        if (narrativeBodyText != null)
-            narrativeBodyText.text = bodyLine2;
+    void UpdateNarrativeBodyLine(string body)
+    {
+        if (narrativeBodyText == null)
+            return;
+        narrativeBodyText.text = body;
+        narrativeBodyText.color = Opaque(narrativeBodyColor);
+        narrativeBodyText.ForceMeshUpdate(true);
+        Canvas.ForceUpdateCanvases();
+    }
 
-        yield return new WaitForSeconds(narrativeLine2Duration);
-
+    void HideNarrativeLines()
+    {
         if (narrativeRoot != null)
             narrativeRoot.SetActive(false);
         else
@@ -349,6 +391,30 @@ public class LevelTutorialStep1 : MonoBehaviour
             if (narrativeBodyText != null)
                 narrativeBodyText.gameObject.SetActive(false);
         }
+    }
+
+    void RefreshNarrativeMeshes()
+    {
+        if (narrativeTitleText != null)
+            narrativeTitleText.ForceMeshUpdate(true);
+        if (narrativeBodyText != null)
+            narrativeBodyText.ForceMeshUpdate(true);
+        Canvas.ForceUpdateCanvases();
+    }
+
+    IEnumerator Start()
+    {
+        yield return new WaitForSeconds(delayBeforeNarrative);
+
+        ShowNarrativeLines(titleContent, bodyLine1);
+
+        yield return new WaitForSeconds(narrativeLine1Duration);
+
+        UpdateNarrativeBodyLine(bodyLine2);
+
+        yield return new WaitForSeconds(narrativeLine2Duration);
+
+        HideNarrativeLines();
 
         if (hintText != null)
         {
@@ -370,6 +436,12 @@ public class LevelTutorialStep1 : MonoBehaviour
 
         _jumpTeachHandled = true;
 
+        if (_flyRoutine != null)
+        {
+            StopCoroutine(_flyRoutine);
+            _flyRoutine = null;
+        }
+
         if (_jumpRoutine != null)
             StopCoroutine(_jumpRoutine);
 
@@ -385,6 +457,12 @@ public class LevelTutorialStep1 : MonoBehaviour
             return;
 
         _boostTeachHandled = true;
+
+        if (_flyRoutine != null)
+        {
+            StopCoroutine(_flyRoutine);
+            _flyRoutine = null;
+        }
 
         if (_jumpRoutine != null)
         {
@@ -402,7 +480,52 @@ public class LevelTutorialStep1 : MonoBehaviour
         }
     }
 
-    public void NotifyFightTeachingEntered()
+    public void NotifyFlyTeachEntered()
+    {
+        if (_flyTeachHandled)
+            return;
+        _flyTeachHandled = true;
+
+        if (_jumpRoutine != null)
+        {
+            StopCoroutine(_jumpRoutine);
+            _jumpRoutine = null;
+        }
+
+        if (_flyRoutine != null)
+            StopCoroutine(_flyRoutine);
+        _flyRoutine = StartCoroutine(FlyTeachRoutine());
+    }
+
+    IEnumerator FlyTeachRoutine()
+    {
+        if (hintPanelRoot != null)
+            hintPanelRoot.SetActive(false);
+
+        ShowNarrativeLines(flyTeachingSayer, flyTeachingSaying);
+        float narr = Mathf.Max(0.05f, flyTeachingNarrativeSeconds);
+        yield return new WaitForSeconds(narr);
+        HideNarrativeLines();
+
+        if (hintPanelRoot != null && !hintPanelRoot.activeSelf)
+            hintPanelRoot.SetActive(true);
+        if (hintText != null)
+        {
+            hintText.text = flyTeachingHint;
+            hintText.color = Opaque(hintLabelColor);
+        }
+
+        if (flyTeachingHintDuration > 0.001f)
+        {
+            yield return new WaitForSeconds(flyTeachingHintDuration);
+            if (hintPanelRoot != null)
+                hintPanelRoot.SetActive(false);
+        }
+
+        _flyRoutine = null;
+    }
+
+    public void NotifyFightTeachingEntered(IReadOnlyList<GameObject> fightTeachingEnemies)
     {
         if (_fightTeachingHandled)
             return;
@@ -410,40 +533,116 @@ public class LevelTutorialStep1 : MonoBehaviour
 
         if (_fightTeachingRoutine != null)
             StopCoroutine(_fightTeachingRoutine);
-        _fightTeachingRoutine = StartCoroutine(FightTeachingNarrativeRoutine());
+        _fightTeachingRoutine = StartCoroutine(FightTeachingFlowRoutine(fightTeachingEnemies));
     }
 
-    IEnumerator FightTeachingNarrativeRoutine()
+    IEnumerator FightTeachingFlowRoutine(IReadOnlyList<GameObject> fightTeachingEnemies)
     {
-        if (narrativeTitleText != null)
+        _fightTeachingKills = 0;
+        _fightTeachingReloadHintShown = false;
+        _fightTeachingCompleteStarted = false;
+        _fightTeachingTotal = 0;
+
+        if (_flyRoutine != null)
         {
-            narrativeTitleText.text = fightTeachingSayer;
-            narrativeTitleText.color = Opaque(narrativeTitleColor);
-            narrativeTitleText.gameObject.SetActive(true);
+            StopCoroutine(_flyRoutine);
+            _flyRoutine = null;
         }
 
-        if (narrativeBodyText != null)
+        if (hintPanelRoot != null)
+            hintPanelRoot.SetActive(false);
+
+        ShowNarrativeLines(fightTeachingOpenSayer, fightTeachingOpenSaying);
+
+        float openWait = Mathf.Max(0.05f, fightTeachingOpenNarrativeSeconds);
+        yield return new WaitForSeconds(openWait);
+
+        HideNarrativeLines();
+
+        if (hintPanelRoot != null && !hintPanelRoot.activeSelf)
+            hintPanelRoot.SetActive(true);
+        if (hintText != null)
         {
-            narrativeBodyText.text = fightTeachingSaying;
-            narrativeBodyText.color = Opaque(narrativeBodyColor);
-            narrativeBodyText.gameObject.SetActive(true);
+            hintText.text = fightTeachingShootHint;
+            hintText.color = Opaque(hintLabelColor);
         }
 
-        if (narrativeRoot != null)
-            narrativeRoot.SetActive(true);
+        if (fightTeachingEnemies == null || fightTeachingEnemies.Count == 0)
+        {
+            _fightTeachingRoutine = StartCoroutine(FightTeachingCompleteRoutine());
+            yield break;
+        }
 
-        float wait = Mathf.Max(0.05f, fightTeachingNarrativeSeconds);
+        foreach (var go in fightTeachingEnemies)
+        {
+            if (go == null)
+                continue;
+            var fb = go.GetComponent<EnemyHitFeedback>();
+            if (fb == null)
+            {
+                Debug.LogWarning("LevelTutorialStep1: 战斗教学敌人缺少 EnemyHitFeedback，无法统计击败。");
+                continue;
+            }
+
+            _fightTeachingTotal++;
+            EnemyHitFeedback captured = fb;
+            Action handler = null;
+            handler = () =>
+            {
+                captured.OnFinalHitCommitted -= handler;
+                OnFightTeachingEnemyDefeated();
+            };
+            captured.OnFinalHitCommitted += handler;
+        }
+
+        if (_fightTeachingTotal == 0)
+        {
+            _fightTeachingRoutine = StartCoroutine(FightTeachingCompleteRoutine());
+            yield break;
+        }
+
+        _fightTeachingRoutine = null;
+        yield break;
+    }
+
+    void OnFightTeachingEnemyDefeated()
+    {
+        _fightTeachingKills++;
+
+        if (_fightTeachingKills == 2 && !_fightTeachingReloadHintShown)
+        {
+            _fightTeachingReloadHintShown = true;
+            if (hintText != null)
+            {
+                hintText.text = fightTeachingReloadHint;
+                hintText.color = Opaque(hintLabelColor);
+            }
+        }
+
+        if (_fightTeachingKills < _fightTeachingTotal || _fightTeachingTotal <= 0 || _fightTeachingCompleteStarted)
+            return;
+
+        _fightTeachingCompleteStarted = true;
+        if (_fightTeachingRoutine != null)
+            StopCoroutine(_fightTeachingRoutine);
+        _fightTeachingRoutine = StartCoroutine(FightTeachingCompleteRoutine());
+    }
+
+    IEnumerator FightTeachingCompleteRoutine()
+    {
+        float pre = Mathf.Max(0f, fightTeachingEndDelaySeconds);
+        if (pre > 0.001f)
+            yield return new WaitForSeconds(pre);
+
+        if (hintPanelRoot != null)
+            hintPanelRoot.SetActive(false);
+
+        ShowNarrativeLines(fightTeachingCompleteSayer, fightTeachingCompleteSaying);
+
+        float wait = Mathf.Max(0.05f, fightTeachingCompleteNarrativeSeconds);
         yield return new WaitForSeconds(wait);
 
-        if (narrativeRoot != null)
-            narrativeRoot.SetActive(false);
-        else
-        {
-            if (narrativeTitleText != null)
-                narrativeTitleText.gameObject.SetActive(false);
-            if (narrativeBodyText != null)
-                narrativeBodyText.gameObject.SetActive(false);
-        }
+        HideNarrativeLines();
 
         _fightTeachingRoutine = null;
     }

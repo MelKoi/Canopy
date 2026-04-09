@@ -47,13 +47,21 @@ public class MechController : MonoBehaviour
     [Tooltip("非垂直推进时，空中水平加/减速相对地面的比例（越小越笨重）")]
     [Range(0.15f, 1f)]
     public float airHorizontalAccelScale = 0.38f;
+    [Tooltip("松开空格且按住 WASD 下落时：基础向上缓冲加速度（米/秒²），模拟姿态喷口/承托，而非仅减轻重力")]
+    public float descentMoveBufferBaseAccel = 14f;
+    [Tooltip("缓冲强度随坠落速度增加（每 1m/s 下落额外提供的向上加速度）")]
+    public float descentMoveBufferPerFallSpeed = 1.1f;
+    [Tooltip("单帧缓冲向上加速度上限，避免数值过大")]
+    public float descentMoveBufferMaxCounterAccel = 32f;
+    [Tooltip("缓冲生效时的最大坠落速度（米/秒，正值表示 |vy| 上限）；0 表示不限制")]
+    public float descentMoveBufferTerminalFallSpeed = 5.5f;
+    [Tooltip("缓冲加速度平滑时间（秒），略大更有“机体先承住再稳住”的感觉")]
+    public float descentMoveBufferSmoothTime = 0.14f;
 
     Rigidbody rb;
     MovementProfile currentProfile;
     float currentEnergy;
     Vector3 moveDir;
-    Vector3 lockedOverBoostDir;
-
     bool isGrounded;
     bool isDodging;
     bool isOverBoosting;
@@ -62,6 +70,9 @@ public class MechController : MonoBehaviour
     float _peelTimer;
     float _jumpBufferUntil = -1f;
     bool _feetGroundedLastStep;
+    bool _overBoostModeActive;
+    float _descentBufferCushionSmoothed;
+    float _descentBufferCushionVel;
 
     public bool TankMode { get; private set; }
     public float CurrentEnergy => currentEnergy;
@@ -98,6 +109,8 @@ public class MechController : MonoBehaviour
 
     void FixedUpdate()
     {
+        if (_overBoostModeActive && currentEnergy <= 0f)
+            _overBoostModeActive = false;
         SyncGroundCheckWithBody();
         UpdateGroundAndJump();
         ApplyMovement();
@@ -116,24 +129,23 @@ public class MechController : MonoBehaviour
             return;
         }
 
-        if (input.OverBoostHeld && currentEnergy > 0f)
+        if (input.OverBoostTogglePressed)
         {
-            if (!isOverBoosting)
-            {
-                if (moveDir.sqrMagnitude < 0.01f)
-                {
-                    Vector3 f = cameraTransform.forward;
-                    f.y = 0f;
-                    lockedOverBoostDir = f.sqrMagnitude > 0.01f ? f.normalized : transform.forward;
-                }
-                else lockedOverBoostDir = moveDir;
-            }
+            if (_overBoostModeActive)
+                _overBoostModeActive = false;
+            else if (currentEnergy > 0f)
+                _overBoostModeActive = true;
+        }
+
+        if (_overBoostModeActive && currentEnergy > 0f)
+        {
             isOverBoosting = true;
             currentProfile = overBoostProfile;
             return;
         }
 
         isOverBoosting = false;
+        _overBoostModeActive = false;
 
         if (!isGrounded && !_feetGroundedLastStep && input.JumpHeld && currentEnergy > 0f && _jumpAscendCooldown <= 0f)
         {
@@ -176,9 +188,16 @@ public class MechController : MonoBehaviour
 
     void ApplyMovement()
     {
-        Vector3 tv = isOverBoosting
-            ? lockedOverBoostDir * currentProfile.maxSpeed
-            : moveDir * currentProfile.maxSpeed;
+        if (isOverBoosting)
+        {
+            Vector3 dir = GetOverBoostThrustDirection();
+            Vector3 overBoostTargetVel = dir * currentProfile.maxSpeed;
+            float step = currentProfile.acceleration * Time.fixedDeltaTime;
+            rb.velocity = Vector3.MoveTowards(rb.velocity, overBoostTargetVel, step);
+            return;
+        }
+
+        Vector3 tv = moveDir * currentProfile.maxSpeed;
 
         float vy;
         if (!isDodging && _peelTimer > 0f && currentProfile != verticalBoostProfile)
@@ -192,12 +211,40 @@ public class MechController : MonoBehaviour
         else if (!isGrounded)
         {
             float g = Physics.gravity.y * airborneGravityMultiplier;
-            vy = rb.velocity.y + g * Time.fixedDeltaTime;
+            float dt = Time.fixedDeltaTime;
+            bool descentBuffer =
+                !input.JumpHeld && moveDir.sqrMagnitude > 0.01f && rb.velocity.y < -0.12f;
+            float cushionTarget = 0f;
+            if (descentBuffer)
+            {
+                float fallSpeed = -rb.velocity.y;
+                cushionTarget = Mathf.Min(
+                    descentMoveBufferBaseAccel + fallSpeed * descentMoveBufferPerFallSpeed,
+                    descentMoveBufferMaxCounterAccel);
+            }
+
+            float smoothT = descentMoveBufferSmoothTime > 0.01f ? descentMoveBufferSmoothTime : 0.01f;
+            _descentBufferCushionSmoothed = Mathf.SmoothDamp(
+                _descentBufferCushionSmoothed,
+                cushionTarget,
+                ref _descentBufferCushionVel,
+                smoothT,
+                Mathf.Infinity,
+                dt);
+
+            g += _descentBufferCushionSmoothed;
+            vy = rb.velocity.y + g * dt;
+            if (descentBuffer && descentMoveBufferTerminalFallSpeed > 0f)
+                vy = Mathf.Max(vy, -descentMoveBufferTerminalFallSpeed);
             if (vy > 0f && jumpAscentCounterAccel > 0f)
-                vy = Mathf.Max(0f, vy - jumpAscentCounterAccel * Time.fixedDeltaTime);
+                vy = Mathf.Max(0f, vy - jumpAscentCounterAccel * dt);
         }
         else
+        {
             vy = rb.velocity.y;
+            _descentBufferCushionSmoothed = 0f;
+            _descentBufferCushionVel = 0f;
+        }
 
         float horizScale = 1f;
         if (!isGrounded && !isDodging && !isOverBoosting && currentProfile != verticalBoostProfile)
@@ -209,6 +256,17 @@ public class MechController : MonoBehaviour
         Vector2 tar = new Vector2(tv.x, tv.z);
         Vector2 horz = Vector2.MoveTowards(cur, tar, tar.sqrMagnitude <= cur.sqrMagnitude + 0.001f ? dec : acc);
         rb.velocity = new Vector3(horz.x, vy, horz.y);
+    }
+
+    /// <summary>极速推进方向：与机体朝向一致的默认由相机与机体对齐保证；推进中随视角（相机 forward）全向调整。</summary>
+    Vector3 GetOverBoostThrustDirection()
+    {
+        Vector3 dir = cameraTransform != null ? cameraTransform.forward : transform.forward;
+        if (bodyTransform != null && dir.sqrMagnitude < 0.0001f)
+            dir = bodyTransform.forward;
+        if (dir.sqrMagnitude < 0.0001f)
+            dir = transform.forward;
+        return dir.normalized;
     }
 
     void SyncGroundCheckWithBody()

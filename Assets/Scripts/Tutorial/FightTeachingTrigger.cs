@@ -44,25 +44,26 @@ public class FightTeachingTrigger : MonoBehaviour
         }
 
         _done = true;
-        SpawnEnemies();
+        var spawned = SpawnEnemies();
         if (tutorial != null)
-            tutorial.NotifyFightTeachingEntered();
+            tutorial.NotifyFightTeachingEntered(spawned);
     }
 
-    void SpawnEnemies()
+    List<GameObject> SpawnEnemies()
     {
+        var spawned = new List<GameObject>();
         Transform battle = FindNamedTransformInLoadedScenes("battleplace1");
         if (battle == null)
         {
             Debug.LogWarning("FightTeachingTrigger: 场景中未找到 battleplace1。");
-            return;
+            return spawned;
         }
 
         var points = CollectSpawnPoints(battle);
         if (points.Count == 0)
         {
             Debug.LogWarning("FightTeachingTrigger: battleplace1 下没有可用的 EnemyPoint / enemypoint。");
-            return;
+            return spawned;
         }
 
         for (int i = 0; i < points.Count; i++)
@@ -70,6 +71,7 @@ public class FightTeachingTrigger : MonoBehaviour
             Transform pt = points[i];
             Vector3 pos = GetSpawnPosition(pt);
             var instance = Instantiate(noMoveEnemyPrefab, pos, pt.rotation);
+            spawned.Add(instance);
             var combat = instance.GetComponent<TestEnemyCombat>();
             if (combat != null)
             {
@@ -77,6 +79,8 @@ public class FightTeachingTrigger : MonoBehaviour
                 combat.reportBossFromPoint3 = false;
             }
         }
+
+        return spawned;
     }
 
     Vector3 GetSpawnPosition(Transform pt)

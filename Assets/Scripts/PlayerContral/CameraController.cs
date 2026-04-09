@@ -28,6 +28,24 @@ public class CameraController : MonoBehaviour
     public float yawSmoothTimeBoostMul = 1.45f;
     public float pitchSmoothTimeBoostMul = 1.35f;
 
+    [Header("垂直运动 — 构图跟随")]
+    [Tooltip("按竖直速度（m/s）叠加的俯仰偏移比例（度 / m/s）；上升为负（略抬头）、下落为正（略低头），速度归零时偏移会收回")]
+    public float verticalMotionPitchOffsetPerSpeed = 1.65f;
+    [Tooltip("上述构图俯仰偏移的上限（度）")]
+    public float verticalMotionPitchFramingMaxDeg = 14f;
+    [Tooltip("构图俯仰偏移的平滑时间（秒）")]
+    public float verticalMotionPitchFramingSmoothTime = 0.11f;
+    [Tooltip("竖直速度超过此值（m/s）开始缩短 pitch 平滑时间")]
+    public float verticalMotionTightenSpeedStart = 2.5f;
+    [Tooltip("竖直速度达到此值（m/s）时平滑时间乘数取到最小")]
+    public float verticalMotionTightenSpeedFull = 12f;
+    [Tooltip("急升急降时 pitch 平滑时间最小乘数（越小镜头俯仰跟得越快）")]
+    [Range(0.15f, 1f)]
+    public float verticalMotionPitchSmoothMinMul = 0.38f;
+    [Tooltip("急升急降时 yaw 平滑时间乘数（略收紧可减少斜向甩镜）")]
+    [Range(0.35f, 1f)]
+    public float verticalMotionYawSmoothMul = 0.72f;
+
     [Header("软锁 — 镜头吸附（默认关闭以免与准星冲突）")]
     public LockOnSystem lockOnSystem;
     [Tooltip("为 true 时：只要存在锁定目标（软锁或硬锁）就不做镜头吸附，避免对准敌人时被拽开")]
@@ -71,6 +89,9 @@ public class CameraController : MonoBehaviour
 
     float _boostPullVel;
     float _currentBoostPull;
+    Rigidbody _targetRb;
+    float _verticalFramingPitchOffset;
+    float _verticalFramingPitchVel;
 
     void Awake()
     {
@@ -81,6 +102,8 @@ public class CameraController : MonoBehaviour
             mechController = FindFirstObjectByType<MechController>();
         if (lockOnSystem == null)
             lockOnSystem = FindFirstObjectByType<LockOnSystem>();
+        if (target != null)
+            _targetRb = target.GetComponentInParent<Rigidbody>();
     }
 
     void LateUpdate()
@@ -102,6 +125,17 @@ public class CameraController : MonoBehaviour
             pitchSt *= pitchSmoothTimeBoostMul;
         }
 
+        float vy = _targetRb != null ? _targetRb.velocity.y : 0f;
+        float vyAbs = Mathf.Abs(vy);
+        if (vyAbs > verticalMotionTightenSpeedStart && verticalMotionTightenSpeedFull > verticalMotionTightenSpeedStart)
+        {
+            float t = Mathf.InverseLerp(verticalMotionTightenSpeedStart, verticalMotionTightenSpeedFull, vyAbs);
+            float pitchMul = Mathf.Lerp(1f, verticalMotionPitchSmoothMinMul, t);
+            float yawMul = Mathf.Lerp(1f, verticalMotionYawSmoothMul, t);
+            pitchSt *= pitchMul;
+            yawSt *= yawMul;
+        }
+
         Vector2 mouseDeltaFree = Vector2.zero;
         if (enableInput && Mouse.current != null)
         {
@@ -117,13 +151,40 @@ public class CameraController : MonoBehaviour
 
         ApplySoftLockAssist(mouseDeltaFree);
 
+        if (ShouldApplyVerticalMotionAssist())
+        {
+            float wantOffset = Mathf.Clamp(
+                -vy * verticalMotionPitchOffsetPerSpeed,
+                -verticalMotionPitchFramingMaxDeg,
+                verticalMotionPitchFramingMaxDeg);
+            float fst = verticalMotionPitchFramingSmoothTime > 0.01f ? verticalMotionPitchFramingSmoothTime : 0.01f;
+            _verticalFramingPitchOffset = Mathf.SmoothDamp(
+                _verticalFramingPitchOffset,
+                wantOffset,
+                ref _verticalFramingPitchVel,
+                fst,
+                Mathf.Infinity,
+                Time.deltaTime);
+        }
+        else
+        {
+            _verticalFramingPitchOffset = Mathf.SmoothDamp(
+                _verticalFramingPitchOffset,
+                0f,
+                ref _verticalFramingPitchVel,
+                0.07f,
+                Mathf.Infinity,
+                Time.deltaTime);
+        }
+
         _yaw = Mathf.SmoothDampAngle(_yaw, _yawTarget, ref _yawVel, yawSt, Mathf.Infinity, Time.deltaTime);
         _pitch = Mathf.SmoothDamp(_pitch, _pitchTarget, ref _pitchVel, pitchSt, Mathf.Infinity, Time.deltaTime);
 
         float pullTarget = IsBoostingForCameraEffects() ? boostOffsetPullBack : 0f;
         _currentBoostPull = Mathf.SmoothDamp(_currentBoostPull, pullTarget, ref _boostPullVel, boostPullSmoothTime, Mathf.Infinity, Time.deltaTime);
 
-        Quaternion baseRot = Quaternion.Euler(_pitch, _yaw, 0f);
+        float displayPitch = Mathf.Clamp(_pitch + _verticalFramingPitchOffset, verticalClamp.x, verticalClamp.y);
+        Quaternion baseRot = Quaternion.Euler(displayPitch, _yaw, 0f);
         Vector3 effectiveOffset = offset + new Vector3(0f, 0f, -_currentBoostPull);
         _shootShakeEuler = Vector3.Lerp(_shootShakeEuler, Vector3.zero, Time.deltaTime * shootShakeDecay);
         Quaternion rotation = baseRot * Quaternion.Euler(_shootShakeEuler);
@@ -185,6 +246,19 @@ public class CameraController : MonoBehaviour
         return mechController.IsSprinting || mechController.IsQuickBoosting;
     }
 
+    bool ShouldApplyVerticalMotionAssist()
+    {
+        if (_targetRb == null)
+            return false;
+        if (lockOnSystem == null)
+            return true;
+        if (lockOnSystem.IsHardLocked)
+            return false;
+        if (disableCameraAssistWhileLocked && lockOnSystem.currentTarget != null)
+            return false;
+        return true;
+    }
+
     void ApplyFovAndShake()
     {
         if (_cam == null)
@@ -232,6 +306,8 @@ public class CameraController : MonoBehaviour
         }
 
         _yawVel = _pitchVel = 0f;
+        _verticalFramingPitchOffset = 0f;
+        _verticalFramingPitchVel = 0f;
         _hasSyncedFromCamera = true;
     }
 
@@ -240,6 +316,8 @@ public class CameraController : MonoBehaviour
         _yaw = _yawTarget = newYaw;
         _pitch = _pitchTarget = Mathf.Clamp(newPitch, verticalClamp.x, verticalClamp.y);
         _yawVel = _pitchVel = 0f;
+        _verticalFramingPitchOffset = 0f;
+        _verticalFramingPitchVel = 0f;
     }
 
     public void AddShootScreenShake(float strength = 1f)

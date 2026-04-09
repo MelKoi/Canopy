@@ -21,10 +21,20 @@ public class EnemyPatrolPath : MonoBehaviour
     public bool loop = true;
 
 #if UNITY_EDITOR
+    void OnDrawGizmos()
+    {
+        DrawPathGizmos(new Color(0.2f, 0.85f, 1f, 0.38f));
+    }
+
     void OnDrawGizmosSelected()
     {
+        DrawPathGizmos(new Color(0.2f, 0.85f, 1f, 0.92f));
+    }
+
+    void DrawPathGizmos(Color lineColor)
+    {
         var t = transform;
-        Gizmos.color = new Color(0.2f, 0.85f, 1f, 0.9f);
+        Gizmos.color = lineColor;
         Vector3 anchor = t.position;
         if (waypoints == null || waypoints.Count == 0)
         {
@@ -43,7 +53,7 @@ public class EnemyPatrolPath : MonoBehaviour
 
         if (loop && waypoints.Count > 0)
         {
-            Gizmos.color = new Color(0.2f, 0.85f, 1f, 0.35f);
+            Gizmos.color = new Color(lineColor.r, lineColor.g, lineColor.b, lineColor.a * 0.45f);
             Gizmos.DrawLine(prev, t.TransformPoint(waypoints[0].localPosition));
         }
     }

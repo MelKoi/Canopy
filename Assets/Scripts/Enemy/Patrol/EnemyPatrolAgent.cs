@@ -2,13 +2,18 @@ using UnityEngine;
 
 /// <summary>
 /// 通用巡逻执行：沿 <see cref="EnemyPatrolPath"/> 给出的折线移动。
-/// 正面可对齐子物体「enemyfront / Enemyfront」（相对根的水平方向），否则用 transform.forward。
+/// 若根物体有 <see cref="Rigidbody"/>，在 FixedUpdate 中用水平速度移动并保留竖直分量（重力落地）。
+/// 无 Rigidbody 时沿用原来的 Transform 位移（兼容旧场景）。
+/// 正面可对齐子物体「enemyfront / Enemyfront」，否则用 transform.forward。
 /// 若同物体存在实现 <see cref="IEnemyPatrolSuspendCondition"/> 的组件（如战斗），满足条件时暂停巡逻。
 /// </summary>
 public class EnemyPatrolAgent : MonoBehaviour
 {
     [Tooltip("未配置时自动查找子物体 enemyfront / Enemyfront")]
     public Transform enemyFront;
+
+    [Tooltip("为空时在子物体中查找并在 Start 时 Apply；也可拖拽指定")]
+    public EnemyPatrolPath pathSource;
 
     Vector3[] _worldWaypoints;
     float[] _waitSeconds;
@@ -22,9 +27,11 @@ public class EnemyPatrolAgent : MonoBehaviour
     float _waitUntil;
 
     IEnemyPatrolSuspendCondition _suspendCondition;
+    Rigidbody _rb;
 
     void Awake()
     {
+        _rb = GetComponent<Rigidbody>();
         CacheSuspendCondition();
         if (enemyFront == null)
         {
@@ -32,6 +39,17 @@ public class EnemyPatrolAgent : MonoBehaviour
             if (t == null)
                 t = transform.Find("Enemyfront");
             enemyFront = t;
+        }
+    }
+
+    void Start()
+    {
+        if (!_hasPath)
+        {
+            if (pathSource == null)
+                pathSource = GetComponentInChildren<EnemyPatrolPath>(true);
+            if (pathSource != null)
+                ApplyFromPath(pathSource);
         }
     }
 
@@ -77,26 +95,64 @@ public class EnemyPatrolAgent : MonoBehaviour
 
     void Update()
     {
+        if (_rb != null)
+            return;
+        PatrolTick(Time.deltaTime, false);
+    }
+
+    void FixedUpdate()
+    {
+        if (_rb == null)
+            return;
+        PatrolTick(Time.fixedDeltaTime, true);
+    }
+
+    void PatrolTick(float dt, bool useRigidbody)
+    {
         if (!_hasPath)
             return;
 
         if (_suspendCondition != null && _suspendCondition.ShouldSuspendPatrol())
+        {
+            if (useRigidbody)
+            {
+                var v = _rb.velocity;
+                _rb.velocity = new Vector3(0f, v.y, 0f);
+            }
+
             return;
+        }
 
         if (Time.time < _waitUntil)
+        {
+            if (useRigidbody)
+            {
+                var v = _rb.velocity;
+                _rb.velocity = new Vector3(0f, v.y, 0f);
+            }
+
             return;
+        }
 
         Vector3 target = _worldWaypoints[_index];
-        Vector3 self = transform.position;
+        Vector3 self = useRigidbody ? _rb.position : transform.position;
         Vector3 delta = target - self;
-        float dist = delta.magnitude;
+        float dist = useRigidbody
+            ? new Vector2(delta.x, delta.z).magnitude
+            : delta.magnitude;
 
         Vector3 flatMove = delta;
         flatMove.y = 0f;
-        FaceTowardsDirection(flatMove, Time.deltaTime);
+        FaceTowardsDirection(flatMove, dt, useRigidbody);
 
         if (dist <= _arriveDist)
         {
+            if (useRigidbody)
+            {
+                var v = _rb.velocity;
+                _rb.velocity = new Vector3(0f, v.y, 0f);
+            }
+
             _waitUntil = Time.time + _waitSeconds[_index];
             if (_index + 1 >= _worldWaypoints.Length)
             {
@@ -110,7 +166,19 @@ public class EnemyPatrolAgent : MonoBehaviour
             return;
         }
 
-        transform.position = Vector3.MoveTowards(self, target, _moveSpeed * Time.deltaTime);
+        if (useRigidbody)
+        {
+            Vector3 toFlat = new Vector3(target.x - self.x, 0f, target.z - self.z);
+            float flatDist = toFlat.magnitude;
+            if (flatDist > 0.0001f)
+            {
+                Vector3 dir = toFlat / flatDist;
+                var v = _rb.velocity;
+                _rb.velocity = new Vector3(dir.x * _moveSpeed, v.y, dir.z * _moveSpeed);
+            }
+        }
+        else
+            transform.position = Vector3.MoveTowards(self, target, _moveSpeed * dt);
     }
 
     void LateUpdate()
@@ -122,7 +190,7 @@ public class EnemyPatrolAgent : MonoBehaviour
         enemyFront.localRotation = Quaternion.identity;
     }
 
-    void FaceTowardsDirection(Vector3 horizontalDir, float dt)
+    void FaceTowardsDirection(Vector3 horizontalDir, float dt, bool useRigidbody)
     {
         if (horizontalDir.sqrMagnitude < 0.0001f)
             return;
@@ -140,8 +208,16 @@ public class EnemyPatrolAgent : MonoBehaviour
         if (face.sqrMagnitude < 0.0001f)
             return;
 
-        float signed = Vector3.SignedAngle(face.normalized, want, Vector3.up);
-        float maxStep = _turnSpeedDeg * dt;
-        transform.Rotate(0f, Mathf.Clamp(signed, -maxStep, maxStep), 0f, Space.World);
+        if (useRigidbody)
+        {
+            Quaternion targetRot = Quaternion.LookRotation(want, Vector3.up);
+            _rb.MoveRotation(Quaternion.RotateTowards(_rb.rotation, targetRot, _turnSpeedDeg * dt));
+        }
+        else
+        {
+            float signed = Vector3.SignedAngle(face.normalized, want, Vector3.up);
+            float maxStep = _turnSpeedDeg * dt;
+            transform.Rotate(0f, Mathf.Clamp(signed, -maxStep, maxStep), 0f, Space.World);
+        }
     }
 }
