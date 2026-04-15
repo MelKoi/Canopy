@@ -36249,9 +36249,10 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 4549107105073609921}
+  - component: {fileID: 9151064369596426640}
   m_Layer: 0
   m_Name: Plane
-  m_TagString: Untagged
+  m_TagString: Enemy
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -36274,8 +36275,30 @@ Transform:
   - {fileID: 8968477367341396234}
   - {fileID: 7031288189351780439}
   - {fileID: 3948055297330367941}
+  - {fileID: 3064923843465471661}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!65 &9151064369596426640
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 501021700191082671}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Size: {x: 4, y: 5, z: 10}
+  m_Center: {x: 0, y: 0, z: 0}
 --- !u!1 &532707493866380109
 GameObject:
   m_ObjectHideFlags: 0
@@ -37996,7 +38019,7 @@ GameObject:
   - component: {fileID: 1681143333174282185}
   - component: {fileID: 5698151988268207836}
   m_Layer: 0
-  m_Name: Cylinder (2)
+  m_Name: GUN2
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -38435,7 +38458,7 @@ GameObject:
   - component: {fileID: 6187905520706168572}
   m_Layer: 0
   m_Name: PlaneBody
-  m_TagString: Untagged
+  m_TagString: Enemy
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -41549,7 +41572,7 @@ GameObject:
   - component: {fileID: 4853506844770505310}
   - component: {fileID: 7243901735305222131}
   m_Layer: 0
-  m_Name: Cylinder (4)
+  m_Name: GUN4
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -44933,7 +44956,7 @@ GameObject:
   - component: {fileID: 2750892409727863628}
   - component: {fileID: 846617952978666965}
   m_Layer: 0
-  m_Name: Cylinder (3)
+  m_Name: GUN3
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -83730,7 +83753,7 @@ GameObject:
   - component: {fileID: 4485644235740741271}
   m_Layer: 0
   m_Name: PlaneHand
-  m_TagString: Untagged
+  m_TagString: Enemy
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -93239,6 +93262,37 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 5738921241631815147}
   m_Mesh: {fileID: 0}
+--- !u!1 &6108014121045233290
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 3064923843465471661}
+  m_Layer: 0
+  m_Name: front
+  m_TagString: Untagged
+  m_Icon: {fileID: 4162164826716764455, guid: 0000000000000000d000000000000000, type: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &3064923843465471661
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6108014121045233290}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 0.04, y: 0.21, z: 6.72}
+  m_LocalScale: {x: 0.5, y: 0.5, z: 0.5}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 4549107105073609921}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &6136219721907155550
 GameObject:
   m_ObjectHideFlags: 0
@@ -96412,7 +96466,7 @@ GameObject:
   - component: {fileID: 6840818248694308968}
   - component: {fileID: 1094828114922597699}
   m_Layer: 0
-  m_Name: Cylinder (1)
+  m_Name: GUN1
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0

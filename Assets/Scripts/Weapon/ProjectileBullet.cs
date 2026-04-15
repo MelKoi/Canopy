@@ -10,15 +10,22 @@ public class ProjectileBullet : MonoBehaviour
     float _speed;
     Transform _homingTarget;
     Rigidbody _rb;
+    bool _damagePlayerLikeEnemy;
+    int _playerHealthDamage = -1;
+    int _playerToughnessDelta = -1;
     [Tooltip("制导强度，越大子弹越会拐向锁定目标")]
     const float HomingStrength = 4f;
 
     public void Setup(float speed, Vector3 direction, Collider[] ignoreColliders, float maxLifetime,
-        Transform homingTarget = null)
+        Transform homingTarget = null, bool damagePlayerLikeEnemy = false, int playerHealthDamage = -1,
+        int playerToughnessDelta = -1)
     {
         _maxLifetime = maxLifetime;
         _speed = speed;
         _homingTarget = homingTarget;
+        _damagePlayerLikeEnemy = damagePlayerLikeEnemy;
+        _playerHealthDamage = playerHealthDamage;
+        _playerToughnessDelta = playerToughnessDelta;
 
         _rb = GetComponent<Rigidbody>();
         if (_rb == null)
@@ -121,9 +128,18 @@ public class ProjectileBullet : MonoBehaviour
     void OnCollisionEnter(Collision collision)
     {
         GameObject hit = collision.gameObject;
-        GameObject enemy = GetEnemyRoot(hit);
-        if (enemy != null)
-            ApplyEnemyHitEffect(enemy);
+        if (_damagePlayerLikeEnemy)
+        {
+            var resources = hit.GetComponentInParent<PlayerMechResources>();
+            if (resources != null)
+                resources.RegisterEnemyProjectileHit(_playerHealthDamage, _playerToughnessDelta);
+        }
+        else
+        {
+            GameObject enemy = GetEnemyRoot(hit);
+            if (enemy != null)
+                ApplyEnemyHitEffect(enemy);
+        }
 
         Destroy(gameObject);
     }

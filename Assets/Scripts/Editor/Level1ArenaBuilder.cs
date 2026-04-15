@@ -153,7 +153,11 @@ public static class Level1ArenaBuilder
             }
         }
         if (prefabEnemy != null)
-            InstantiateUnitUnder(pEnemy, prefabEnemy);
+        {
+            var encounter = root.AddComponent<Level1PlaneEncounter>();
+            encounter.Configure(prefabEnemy);
+        }
+
         if (prefabMinion != null)
         {
             InstantiateUnitUnder(pMinion1, prefabMinion);
