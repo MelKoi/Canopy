@@ -8,8 +8,8 @@ GameObject:
   m_PrefabAsset: {fileID: 0}
   serializedVersion: 6
   m_Component:
-  - {fileID: 5019928300010000002}
-  - {fileID: 5019928300010000003}
+  - component: {fileID: 5019928300010000002}
+  - component: {fileID: 5019928300010000003}
   m_Layer: 0
   m_Name: TwilightAtmosphere
   m_TagString: Untagged
