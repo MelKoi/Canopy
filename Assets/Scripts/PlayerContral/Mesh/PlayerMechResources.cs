@@ -14,6 +14,8 @@ public class PlayerMechResources : MonoBehaviour
     [Header("韧性")]
     public int maxToughness = 100;
     public int toughnessGainPerEnemyHit = 20;
+    [Tooltip("自上次被敌人子弹命中起，超过此秒数未再受击则韧性归零")]
+    public float toughnessResetAfterNoHitSeconds = 2f;
 
     [Header("视觉效果")]
     public Color toughnessFullTint = new Color(1f, 0.15f, 0.1f, 1f);
@@ -25,6 +27,7 @@ public class PlayerMechResources : MonoBehaviour
     int _health;
     int _toughness;
     bool _flashRunning;
+    float _lastEnemyHitTime = float.NegativeInfinity;
     readonly List<RendererColorSnapshot> _rendererSnapshots = new List<RendererColorSnapshot>();
 
     struct RendererColorSnapshot
@@ -49,6 +52,15 @@ public class PlayerMechResources : MonoBehaviour
                 uiRootToExclude = t;
         }
         CacheRendererSnapshots();
+    }
+
+    void Update()
+    {
+        if (_health <= 0 || _flashRunning || _toughness <= 0)
+            return;
+        float window = Mathf.Max(0.05f, toughnessResetAfterNoHitSeconds);
+        if (Time.time - _lastEnemyHitTime >= window)
+            _toughness = 0;
     }
 
     void CacheRendererSnapshots()
@@ -92,8 +104,12 @@ public class PlayerMechResources : MonoBehaviour
         if (_health <= 0)
             return;
 
-        int hd = healthDamage >= 0 ? healthDamage : healthDamagePerEnemyHit;
+        // healthDamage==0 视为未配置有效单发伤害，使用 10；负数仍用机甲默认
+        int hd = healthDamage < 0
+            ? healthDamagePerEnemyHit
+            : (healthDamage == 0 ? 10 : healthDamage);
         int td = toughnessDelta >= 0 ? toughnessDelta : toughnessGainPerEnemyHit;
+        _lastEnemyHitTime = Time.time;
         _health -= Mathf.Max(0, hd);
         _toughness = Mathf.Min(maxToughness, _toughness + Mathf.Max(0, td));
 

@@ -45,11 +45,11 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   waypoints:
-  - localPosition: {x: 4, y: 0, z: 0}
+  - localPosition: {x: 2, y: 0, z: 0}
     waitSeconds: 0.35
-  - localPosition: {x: 4, y: 0, z: 4}
+  - localPosition: {x: 2, y: 0, z: 2}
     waitSeconds: 0.35
-  - localPosition: {x: 0, y: 0, z: 4}
+  - localPosition: {x: 0, y: 0, z: 2}
     waitSeconds: 0.35
   moveSpeed: 2.5
   turnSpeedDegrees: 420
@@ -118,9 +118,9 @@ Transform:
   m_GameObject: {fileID: 5455249886221273249}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 14.61, y: 3.44, z: -12.65}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 2, y: 2, z: 2}
+  m_ConstrainProportionsScale: 1
   m_Children:
   - {fileID: 4510001510661073174}
   - {fileID: 799879388742306485}
@@ -259,8 +259,8 @@ MonoBehaviour:
   reportBossFromPoint3: 0
   detectionRadius: 45
   requireLineOfSight: 0
-  fireInterval: 2
-  bulletSpeed: 35
+  fireInterval: 0.45
+  bulletSpeed: 95
   bulletDiameter: 0.24
   spawnForward: 0.6
   aimHeightOffset: 1
@@ -272,7 +272,7 @@ MonoBehaviour:
   requireFacingToFire: 1
   faceTurnSpeedDeg: 360
   fireFacingMaxAngleDeg: 15
-  projectileHealthDamage: 5
+  projectileHealthDamage: 100
   projectileToughnessDelta: 10
 --- !u!114 &9011000187654322
 MonoBehaviour:

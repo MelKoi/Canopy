@@ -21,10 +21,23 @@ public class PlayerHealthSynBarUI : MonoBehaviour
     float _healthAmount = 1f;
     float _synAmount;
 
+    void Awake()
+    {
+        TryBindResources();
+    }
+
+    void TryBindResources()
+    {
+        if (resources != null)
+            return;
+        resources = GetComponentInParent<PlayerMechResources>();
+        if (resources == null)
+            resources = FindFirstObjectByType<PlayerMechResources>(FindObjectsInactive.Include);
+    }
+
     void Start()
     {
-        if (resources == null)
-            resources = GetComponentInParent<PlayerMechResources>();
+        TryBindResources();
 
         if (healthFillImage != null)
             healthFillImage.type = Image.Type.Simple;
@@ -40,6 +53,8 @@ public class PlayerHealthSynBarUI : MonoBehaviour
 
     void Update()
     {
+        if (resources == null)
+            TryBindResources();
         if (resources == null)
             return;
 

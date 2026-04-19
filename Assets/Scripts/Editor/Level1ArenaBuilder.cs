@@ -369,7 +369,7 @@ public static class Level1ArenaBuilder
         Undo.RegisterCreatedObjectUndo(inst, "Spawn " + prefab.name);
         inst.transform.localPosition = Vector3.zero;
         inst.transform.localRotation = Quaternion.identity;
-        inst.transform.localScale = Vector3.one;
+        inst.transform.localScale = prefab.transform.localScale;
         if (placeOnGround)
             PlaceFeetOnGround(inst.transform);
         return inst;

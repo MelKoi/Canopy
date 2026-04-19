@@ -4997,11 +4997,11 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::LockOnSystem
   cam: {fileID: 6561793706217540509}
-  lockRadiusViewport: 0.08
+  lockRadiusViewport: 0.04
   enemyTag: Enemy
-  detectRadius: 100
-  hardLockPickRadiusViewport: 0.22
-  hardLockMaxDistance: 120
+  detectRadius: 50
+  hardLockPickRadiusViewport: 0.11
+  hardLockMaxDistance: 60
 --- !u!114 &4524572385175039535
 MonoBehaviour:
   m_ObjectHideFlags: 0

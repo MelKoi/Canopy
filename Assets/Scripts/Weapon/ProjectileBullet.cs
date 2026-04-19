@@ -16,13 +16,31 @@ public class ProjectileBullet : MonoBehaviour
     [Tooltip("制导强度，越大子弹越会拐向锁定目标")]
     const float HomingStrength = 4f;
 
+    Vector3 _baseFireDirection;
+    bool _useMovementDrift;
+    Vector3 _shooterMoveHorizontal;
+    float _movementDriftLateralAmplitude;
+    float _movementDriftWobbleHz;
+    float _movementDriftSlerp;
+
     public void Setup(float speed, Vector3 direction, Collider[] ignoreColliders, float maxLifetime,
         Transform homingTarget = null, bool damagePlayerLikeEnemy = false, int playerHealthDamage = -1,
-        int playerToughnessDelta = -1)
+        int playerToughnessDelta = -1,
+        Vector3 shooterHorizontalMoveDirection = default, bool useMovementDriftForPlayerBullet = false,
+        float movementDriftLateralAmplitude = 0.14f, float movementDriftWobbleHz = 2f, float movementDriftSteer = 5f)
     {
         _maxLifetime = maxLifetime;
         _speed = speed;
-        _homingTarget = homingTarget;
+        _baseFireDirection = direction.sqrMagnitude > 1e-8f ? direction.normalized : Vector3.forward;
+        _useMovementDrift = damagePlayerLikeEnemy && useMovementDriftForPlayerBullet;
+        _shooterMoveHorizontal = shooterHorizontalMoveDirection;
+        _shooterMoveHorizontal.y = 0f;
+        if (_shooterMoveHorizontal.sqrMagnitude > 1e-6f)
+            _shooterMoveHorizontal.Normalize();
+        _movementDriftLateralAmplitude = movementDriftLateralAmplitude;
+        _movementDriftWobbleHz = movementDriftWobbleHz;
+        _movementDriftSlerp = movementDriftSteer;
+        _homingTarget = _useMovementDrift ? null : homingTarget;
         _damagePlayerLikeEnemy = damagePlayerLikeEnemy;
         _playerHealthDamage = playerHealthDamage;
         _playerToughnessDelta = playerToughnessDelta;
@@ -114,7 +132,25 @@ public class ProjectileBullet : MonoBehaviour
             return;
         }
 
-        if (_homingTarget != null && _rb != null)
+        if (_useMovementDrift && _rb != null)
+        {
+            Vector3 v = _rb.velocity;
+            Vector3 dir = v.sqrMagnitude > 1e-6f ? v.normalized : _baseFireDirection;
+            Vector3 moveRef = _shooterMoveHorizontal.sqrMagnitude > 1e-6f
+                ? _shooterMoveHorizontal
+                : Vector3.Cross(Vector3.up, _baseFireDirection).normalized;
+            Vector3 lateral = Vector3.Cross(Vector3.up, moveRef);
+            if (lateral.sqrMagnitude < 1e-6f)
+                lateral = Vector3.right;
+            lateral.Normalize();
+            float wobble = Mathf.Sin(_t * Mathf.PI * 2f * _movementDriftWobbleHz) * _movementDriftLateralAmplitude;
+            Vector3 perturbed = (dir + lateral * wobble).normalized;
+            if (_shooterMoveHorizontal.sqrMagnitude > 1e-6f)
+                perturbed = Vector3.Slerp(perturbed, (perturbed + _shooterMoveHorizontal * 0.12f).normalized, Time.deltaTime * 1.8f);
+            Vector3 desiredVel = perturbed * _speed;
+            _rb.velocity = Vector3.Lerp(v, desiredVel, _movementDriftSlerp * Time.deltaTime);
+        }
+        else if (_homingTarget != null && _rb != null)
         {
             Vector3 toTarget = _homingTarget.position - transform.position;
             if (toTarget.sqrMagnitude > 0.01f)

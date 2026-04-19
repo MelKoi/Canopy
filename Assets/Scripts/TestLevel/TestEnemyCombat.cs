@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 
 /// <summary>
@@ -14,8 +15,8 @@ public class TestEnemyCombat : MonoBehaviour, IEnemyPatrolSuspendCondition
     public float detectionRadius = 5f;
     [Tooltip("为 false 时只要距离内即视为可交战（射线易被场景几何挡住）")]
     public bool requireLineOfSight = true;
-    public float fireInterval = 2f;
-    public float bulletSpeed = 35f;
+    public float fireInterval = 0.55f;
+    public float bulletSpeed = 90f;
     public float bulletDiameter = 0.24f;
     public float spawnForward = 0.6f;
     public float aimHeightOffset = 1f;
@@ -32,18 +33,18 @@ public class TestEnemyCombat : MonoBehaviour, IEnemyPatrolSuspendCondition
     public float fireFacingMaxAngleDeg = 15f;
 
     [Header("子弹对玩家（<0 表示用 PlayerMechResources 默认值）")]
-    public int projectileHealthDamage = -1;
+    public int projectileHealthDamage = 100;
     public int projectileToughnessDelta = -1;
 
     MechController _playerMech;
-    Collider _selfCol;
+    Collider[] _selfColliders;
     float _nextFireTime;
     EnemyHitFeedback _feedback;
     Transform _enemyFront;
 
     void Awake()
     {
-        _selfCol = GetComponent<Collider>();
+        _selfColliders = GetComponentsInChildren<Collider>(true);
         _feedback = GetComponent<EnemyHitFeedback>();
         if (stationaryNoPatrol)
         {
@@ -128,6 +129,8 @@ public class TestEnemyCombat : MonoBehaviour, IEnemyPatrolSuspendCondition
 
         Transform aim = _playerMech.transform;
         Vector3 from = transform.position + Vector3.up * aimHeightOffset * 0.5f;
+        if (_enemyFront != null)
+            from = _enemyFront.position + Vector3.up * Mathf.Max(0.08f, aimHeightOffset * 0.2f);
         Vector3 to = aim.position + Vector3.up * (aimHeightOffset * 0.5f);
         Vector3 delta = to - from;
         float dist = delta.magnitude;
@@ -143,11 +146,20 @@ public class TestEnemyCombat : MonoBehaviour, IEnemyPatrolSuspendCondition
 
     bool HasClearLineOfSight(Vector3 origin, Vector3 dir, float maxDist, Transform playerRoot)
     {
-        if (!Physics.Raycast(origin, dir, out RaycastHit hit, maxDist, lineOfSightMask, QueryTriggerInteraction.Ignore))
+        dir = dir.normalized;
+        var hits = Physics.RaycastAll(origin, dir, maxDist, lineOfSightMask, QueryTriggerInteraction.Ignore);
+        if (hits == null || hits.Length == 0)
             return true;
+        Array.Sort(hits, (a, b) => a.distance.CompareTo(b.distance));
+        foreach (var h in hits)
+        {
+            Transform t = h.transform;
+            if (t == transform || t.IsChildOf(transform))
+                continue;
+            return t == playerRoot || t.IsChildOf(playerRoot);
+        }
 
-        Transform t = hit.transform;
-        return t == playerRoot || t.IsChildOf(playerRoot);
+        return true;
     }
 
     void FacePlayerHorizontally(Vector3 dirToPlayerWorld, float dt)
@@ -220,7 +232,7 @@ public class TestEnemyCombat : MonoBehaviour, IEnemyPatrolSuspendCondition
 
         float life = Mathf.Max(8f, detectionRadius * 2f / Mathf.Max(bulletSpeed, 1f));
         var proj = go.AddComponent<EnemyProjectileBullet>();
-        Collider[] ignore = _selfCol != null ? new[] { _selfCol } : null;
+        Collider[] ignore = _selfColliders != null && _selfColliders.Length > 0 ? _selfColliders : null;
         proj.Setup(bulletSpeed, dir, ignore, life, projectileHealthDamage, projectileToughnessDelta);
     }
 }
