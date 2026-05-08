@@ -6,7 +6,7 @@ using UnityEngine;
 
 /// Plane Boss：<c>FrontGun</c> 下 GUN1～GUN4；每根 GUN 下若有子物体 <c>Fire</c> 则从 Fire 世界位置发射，否则用 GUN 自身 Transform。
 
-/// 接战逻辑与敌人一致：检测到玩家进入攻击范围后开火，不依赖玩家是否挂载武器或其它组件；仅需要能解析出玩家位置（机甲或 <see cref="PlayerMechResources"/>）。
+/// 接战逻辑与敌人一致：检测到玩家进入攻击范围后开火，不依赖玩家是否挂载武器或其它组件；瞄准点优先为机甲 <c>Mesh/Body/DuZi</c>，否则回退 Mesh、Body 或机甲根。
 
 /// </summary>
 
@@ -16,15 +16,11 @@ public class PlaneCombat : MonoBehaviour
 
 {
 
-    const float MinionDefaultDetectionRadius = 5f;
-
-
-
     [Header("接战")]
 
     [Tooltip("与玩家瞄准点的直线距离 ≤ 此值时可开火；应略大于机体环绕半径以免够不着")]
 
-    public float engagementDistanceMeters = 56f;
+    public float engagementDistanceMeters = 46f;
 
 
 
@@ -40,13 +36,13 @@ public class PlaneCombat : MonoBehaviour
 
     public float primaryPairFireInterval = 0.1f;
 
-    public float primaryBulletSpeed = 420f;
+    public float primaryBulletSpeed = 130f;
 
     public float primaryBulletDiameter = 0.11f;
 
     public float primarySpawnForward = 0.35f;
 
-    public float primaryMaxRange = 400f;
+    public float primaryMaxRange = 680f;
 
     [Tooltip("GUN1/4 命中扣血；≥0 为固定值，&lt;0 则用 PlayerMechResources 默认")]
 
@@ -75,6 +71,10 @@ public class PlaneCombat : MonoBehaviour
     public float bulletDiameterEnemy = 0.24f;
 
     public float spawnForwardEnemy = 0.6f;
+
+    [Tooltip("GUN2/3 橙色弹约最大飞行距离（米）；寿命 = 距离/弹速 + 0.5s")]
+
+    public float orangeEnemyBulletMaxRange = 760f;
 
     [Tooltip("GUN2/3 命中扣血；≥0 为固定值，&lt;0 则用 PlayerMechResources 默认")]
 
@@ -372,7 +372,7 @@ public class PlaneCombat : MonoBehaviour
 
 
 
-        float life = Mathf.Max(8f, MinionDefaultDetectionRadius * 2f / Mathf.Max(speed, 1f));
+        float life = orangeEnemyBulletMaxRange / Mathf.Max(speed, 1f) + 0.5f;
 
         var proj = go.AddComponent<EnemyProjectileBullet>();
 
@@ -444,7 +444,7 @@ public class PlaneCombat : MonoBehaviour
 
 
 
-    /// <summary>解析玩家用于瞄准的 Transform：优先机甲 Mesh，否则带 PlayerMechResources 的物体。不要求玩家挂载武器。</summary>
+    /// <summary>解析玩家用于瞄准的 Transform：优先 Mesh/Body/DuZi，否则 Mesh、Body、机甲根；再否则带 PlayerMechResources 的物体。</summary>
 
     bool EnsurePlayerTarget()
 
@@ -462,13 +462,55 @@ public class PlaneCombat : MonoBehaviour
 
         {
 
-            var t = mech.transform.Find("Mesh");
+            Transform mesh = mech.transform.Find("Mesh");
 
-            _playerAimTarget = t != null ? t : FindChildDepthFirst(mech.transform, "Mesh");
+            if (mesh == null)
 
-            if (_playerAimTarget == null)
+                mesh = FindChildDepthFirst(mech.transform, "Mesh");
+
+            if (mesh == null)
+
+            {
 
                 _playerAimTarget = mech.transform;
+
+                return true;
+
+            }
+
+
+
+            Transform body = mesh.Find("Body");
+
+            if (body == null)
+
+                body = FindChildDepthFirst(mesh, "Body");
+
+
+
+            Transform duzi = null;
+
+            if (body != null)
+
+            {
+
+                duzi = body.Find("DuZi");
+
+                if (duzi == null)
+
+                    duzi = FindChildDepthFirst(body, "DuZi");
+
+            }
+
+
+
+            if (duzi == null)
+
+                duzi = FindChildDepthFirst(mesh, "DuZi");
+
+
+
+            _playerAimTarget = duzi != null ? duzi : (body != null ? body : mesh);
 
             return true;
 

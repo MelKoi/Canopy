@@ -537,7 +537,7 @@ MonoBehaviour:
   m_MultiSelect: 0
   m_Options:
     m_Options:
-    - m_Text: "\u5355\u53D1\u67AA"
+    - m_Text: "\u5355\u53D1\u70AE \u53F3"
       m_Image: {fileID: 0}
       m_Color: {r: 1, g: 1, b: 1, a: 1}
     - m_Text: "\u706B\u7BAD\u7B52 \u53F3"
@@ -2264,7 +2264,7 @@ MonoBehaviour:
   m_MultiSelect: 0
   m_Options:
     m_Options:
-    - m_Text: "\u5355\u53D1\u67AA"
+    - m_Text: "\u5355\u53D1\u70AE \u5DE6"
       m_Image: {fileID: 0}
       m_Color: {r: 1, g: 1, b: 1, a: 1}
     - m_Text: "\u706B\u7BAD\u7B52 \u5DE6"
@@ -2545,28 +2545,6 @@ MonoBehaviour:
   m_BlockingMask:
     serializedVersion: 2
     m_Bits: 4294967295
---- !u!114 &562760576
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 562760571}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f8e7d6c5b4a3928170615403abcdef01, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  equipePanel: {fileID: 957285959}
-  equipeButton: {fileID: 1711019516}
-  startGameButton: {fileID: 534447575}
-  levelSceneName: Level_0
-  mechMeshPrefab: {fileID: 7760291223895797318, guid: 0974bf4286f9cd540b1e16c4ba49df49, type: 3}
-  mechPreviewRect: {fileID: 472720286}
-  previewMeshYaw: 200
-  previewCameraPitch: 14
-  previewCameraOrbitYaw: 32
-  previewFillMargin: 1.06
 --- !u!114 &562760573
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2640,6 +2618,29 @@ RectTransform:
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 0, y: 0}
   m_Pivot: {x: 0, y: 0}
+--- !u!114 &562760576
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 562760571}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f8e7d6c5b4a3928170615403abcdef01, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  equipePanel: {fileID: 957285959}
+  equipeButton: {fileID: 1711019516}
+  startGameButton: {fileID: 534447575}
+  levelSceneName: Level_0
+  mechMeshPrefab: {fileID: 7760291223895797318, guid: 0974bf4286f9cd540b1e16c4ba49df49,
+    type: 3}
+  mechPreviewRect: {fileID: 472720286}
+  previewMeshYaw: 200
+  previewCameraPitch: 14
+  previewCameraOrbitYaw: 32
+  previewFillMargin: 1.06
 --- !u!1 &590498887
 GameObject:
   m_ObjectHideFlags: 0
@@ -3379,6 +3380,7 @@ GameObject:
   - component: {fileID: 957285960}
   - component: {fileID: 957285962}
   - component: {fileID: 957285961}
+  - component: {fileID: 957285963}
   m_Layer: 5
   m_Name: EquipePanel
   m_TagString: Untagged
@@ -3439,6 +3441,37 @@ MonoBehaviour:
   m_FillOrigin: 0
   m_UseSpriteMesh: 0
   m_PixelsPerUnitMultiplier: 1
+--- !u!114 &957285963
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 957285959}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b7e8d9c0a1f2435465768798a9bac0d1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  mechMeshPrefab: {fileID: 7760291223895797318, guid: 0974bf4286f9cd540b1e16c4ba49df49, type: 3}
+  weaponPrefabs:
+  - displayName: "\u5355\u53D1\u67AA"
+    prefab: {fileID: 1147574203667360722, guid: 3284b6b264a6abe4b8ebe682bf6ff5e1, type: 3}
+  - displayName: "\u8FDE\u53D1\u67AA"
+    prefab: {fileID: 964986821440945134, guid: 3c6d36f4ac36f924b9238b2b305477e7, type: 3}
+  - displayName: "\u706B\u7BAD\u7B52 \u5DE6"
+    prefab: {fileID: 8674084828882526969, guid: 03c48d912c76bfe42b1d4c9875affc25, type: 3}
+  - displayName: "\u706B\u7BAD\u7B52 \u53F3"
+    prefab: {fileID: 2680239578369522959, guid: 3a65590406e7502408c818aec352ff0d, type: 3}
+  frontDirectionVerticalBlend: 0.35
+  muzzleYawAimStrength: 0.62
+  muzzleYawExtraDegrees: 180
+  invertMechForwardFromFront: 0
+  attachAsLocalChildPrefabNames:
+  - "\u5355\u53D1\u70AE \u5DE6"
+  - "\u5355\u53D1\u70AE \u53F3"
+  skipMuzzleYawForLocalChildPrefabs: 1
+  attachAsLocalChildRotateXEuler: 90
 --- !u!222 &957285962
 CanvasRenderer:
   m_ObjectHideFlags: 0

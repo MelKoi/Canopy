@@ -1,7 +1,7 @@
 using UnityEngine;
 
 /// <summary>
-/// 球形弹体：直线飞行，可选轻微制导；碰撞后销毁；击中带 EnemyHitFeedback 的敌人按累计命中处理，否则 Tag 敌人单次击杀；带尾迹可视化。
+/// 球形弹体：直线飞行，可选轻微制导；碰撞后销毁；击中带 EnemyHitFeedback 的敌人按真实伤害结算，否则 Tag 敌人单次击杀；带尾迹可视化。
 /// </summary>
 [RequireComponent(typeof(Rigidbody))]
 public class ProjectileBullet : MonoBehaviour
@@ -22,12 +22,14 @@ public class ProjectileBullet : MonoBehaviour
     float _movementDriftLateralAmplitude;
     float _movementDriftWobbleHz;
     float _movementDriftSlerp;
+    float _enemyDamage = 1f;
 
     public void Setup(float speed, Vector3 direction, Collider[] ignoreColliders, float maxLifetime,
         Transform homingTarget = null, bool damagePlayerLikeEnemy = false, int playerHealthDamage = -1,
         int playerToughnessDelta = -1,
         Vector3 shooterHorizontalMoveDirection = default, bool useMovementDriftForPlayerBullet = false,
-        float movementDriftLateralAmplitude = 0.14f, float movementDriftWobbleHz = 2f, float movementDriftSteer = 5f)
+        float movementDriftLateralAmplitude = 0.14f, float movementDriftWobbleHz = 2f, float movementDriftSteer = 5f,
+        float enemyDamage = 1f)
     {
         _maxLifetime = maxLifetime;
         _speed = speed;
@@ -44,6 +46,7 @@ public class ProjectileBullet : MonoBehaviour
         _damagePlayerLikeEnemy = damagePlayerLikeEnemy;
         _playerHealthDamage = playerHealthDamage;
         _playerToughnessDelta = playerToughnessDelta;
+        _enemyDamage = Mathf.Max(0f, enemyDamage);
 
         _rb = GetComponent<Rigidbody>();
         if (_rb == null)
@@ -174,7 +177,7 @@ public class ProjectileBullet : MonoBehaviour
         {
             GameObject enemy = GetEnemyRoot(hit);
             if (enemy != null)
-                ApplyEnemyHitEffect(enemy);
+                ApplyEnemyHitEffect(enemy, _enemyDamage);
         }
 
         Destroy(gameObject);
@@ -191,12 +194,12 @@ public class ProjectileBullet : MonoBehaviour
         return null;
     }
 
-    static void ApplyEnemyHitEffect(GameObject hitObject)
+    static void ApplyEnemyHitEffect(GameObject hitObject, float damage)
     {
         var feedback = hitObject.GetComponentInParent<EnemyHitFeedback>();
         if (feedback != null)
         {
-            feedback.OnHit();
+            feedback.ApplyDamage(damage);
             return;
         }
 

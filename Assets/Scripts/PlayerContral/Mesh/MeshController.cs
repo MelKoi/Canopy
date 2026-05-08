@@ -73,6 +73,7 @@ public class MechController : MonoBehaviour
     bool _overBoostModeActive;
     float _descentBufferCushionSmoothed;
     float _descentBufferCushionVel;
+    int _weaponMovementLockCount;
 
     public bool TankMode { get; private set; }
     public float CurrentEnergy => currentEnergy;
@@ -80,6 +81,13 @@ public class MechController : MonoBehaviour
     public bool IsSprinting => isOverBoosting;
     /// <summary>快速推进（Ctrl 触发的地面加速段），用于镜头 FOV 等。</summary>
     public bool IsQuickBoosting => isBoosting && !isOverBoosting && !isDodging;
+
+    public bool IsWeaponMovementLocked => _weaponMovementLockCount > 0;
+
+    /// <summary>武器开火等逻辑可嵌套调用：Push/Pop 成对使用。锁定期间清空速度且不响应移动/推进/跳跃输入。</summary>
+    public void PushWeaponMovementLock() => _weaponMovementLockCount++;
+
+    public void PopWeaponMovementLock() => _weaponMovementLockCount = Mathf.Max(0, _weaponMovementLockCount - 1);
 
     void Awake()
     {
@@ -122,6 +130,8 @@ public class MechController : MonoBehaviour
     void UpdateState()
     {
         if (isDodging) return;
+        if (IsWeaponMovementLocked)
+            return;
 
         if (input.DodgePressed && currentEnergy >= dodgeProfile.energyCostPerSecond)
         {
@@ -188,6 +198,12 @@ public class MechController : MonoBehaviour
 
     void ApplyMovement()
     {
+        if (IsWeaponMovementLocked)
+        {
+            rb.velocity = Vector3.zero;
+            return;
+        }
+
         if (isOverBoosting)
         {
             Vector3 dir = GetOverBoostThrustDirection();
@@ -285,7 +301,8 @@ public class MechController : MonoBehaviour
         isGrounded = mask && Physics.CheckSphere(p, groundCheckRadius, groundMask);
         _feetGroundedLastStep = feet;
 
-        bool jumpReq = input.JumpPressed || (_jumpBufferUntil > 0f && Time.time <= _jumpBufferUntil);
+        bool jumpReq = !IsWeaponMovementLocked &&
+                       (input.JumpPressed || (_jumpBufferUntil > 0f && Time.time <= _jumpBufferUntil));
         if (feet && jumpReq)
         {
             rb.velocity = new Vector3(rb.velocity.x, jumpVelocity, rb.velocity.z);

@@ -71,18 +71,33 @@ public class HallSceneUIController : MonoBehaviour
         ResizeRenderTexture(px.x, px.y);
     }
 
+    public GameObject PreviewMeshInstance => _previewModel;
+
+    /// <summary>Mesh 预制体在编辑器中被改写后，刷新 Hall 内预览实例。</summary>
+    public void RebuildMeshPreviewIfOpen()
+    {
+        if (!_equipeOpen)
+            return;
+        TeardownMechPreview();
+        BuildMechPreview();
+    }
+
     void ToggleEquipePanel()
     {
         if (equipePanel == null)
             return;
 
         _equipeOpen = !_equipeOpen;
-        equipePanel.SetActive(_equipeOpen);
-
         if (_equipeOpen)
+        {
             BuildMechPreview();
+            equipePanel.SetActive(true);
+        }
         else
+        {
+            equipePanel.SetActive(false);
             TeardownMechPreview();
+        }
     }
 
     void StartLevel()

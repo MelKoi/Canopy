@@ -179,7 +179,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: acff501c73c6b97449a760a372f6c561, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::EnemyHitFeedback
-  hitsToDestroy: 3
+  maxHealth: 3
   destroyDelay: 1
 --- !u!114 &9011000187654324
 MonoBehaviour:

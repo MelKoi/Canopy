@@ -19,11 +19,11 @@ public class PlaneDistanceHoverAI : MonoBehaviour
     [FormerlySerializedAs("preferredDistanceMeters")]
     [Min(0.5f)]
     [Tooltip("与玩家在水平面（XZ）上保持的环绕距离（米），略大可减少被绕到正下方")]
-    public float preferredHorizontalDistanceMeters = 38f;
+    public float preferredHorizontalDistanceMeters = 30f;
     [FormerlySerializedAs("preferredDistanceExpandedMeters")]
     [Tooltip("与环境碰撞避让期间，水平环绕距离的上限（米）")]
     [Min(0.5f)]
-    public float preferredHorizontalDistanceExpandedMeters = 44f;
+    public float preferredHorizontalDistanceExpandedMeters = 36f;
     [Tooltip("目标高度相对玩家 Mesh 的抬高（米）；略小可拉近垂直方向，减轻玩家躲在机腹下打不中")]
     [Min(-2f)]
     public float heightAbovePlayerMeters = 8f;
@@ -36,7 +36,7 @@ public class PlaneDistanceHoverAI : MonoBehaviour
 
     [Header("朝向")]
     [Tooltip("与玩家 Mesh 距离小于等于此值时，视为接战：水平朝向玩家（供射击与朝向共用）")]
-    public float engagementDistanceMeters = 52f;
+    public float engagementDistanceMeters = 44f;
     public float turnLerp = 8f;
 
     [Header("环境碰撞避让")]

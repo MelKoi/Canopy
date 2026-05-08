@@ -19,6 +19,8 @@ public class TestEnemyCombat : MonoBehaviour, IEnemyPatrolSuspendCondition
     public float bulletSpeed = 90f;
     public float bulletDiameter = 0.24f;
     public float spawnForward = 0.6f;
+    [Tooltip("子弹约最大飞行距离（米）；寿命 = 距离/弹速 + 0.5s")]
+    public float bulletMaxRange = 780f;
     public float aimHeightOffset = 1f;
     public LayerMask lineOfSightMask = ~0;
 
@@ -230,7 +232,7 @@ public class TestEnemyCombat : MonoBehaviour, IEnemyPatrolSuspendCondition
             new Color(1f, 0.65f, 0.2f, 1f),
             new Color(1f, 0.25f, 0f, 0.08f));
 
-        float life = Mathf.Max(8f, detectionRadius * 2f / Mathf.Max(bulletSpeed, 1f));
+        float life = bulletMaxRange / Mathf.Max(bulletSpeed, 1f) + 0.5f;
         var proj = go.AddComponent<EnemyProjectileBullet>();
         Collider[] ignore = _selfColliders != null && _selfColliders.Length > 0 ? _selfColliders : null;
         proj.Setup(bulletSpeed, dir, ignore, life, projectileHealthDamage, projectileToughnessDelta);

@@ -408,7 +408,7 @@ GameObject:
   m_Component:
   - component: {fileID: 2017023979388357782}
   m_Layer: 0
-  m_Name: GameObject
+  m_Name: "\u67AA\u53E3"
   m_TagString: Untagged
   m_Icon: {fileID: 4162164826716764455, guid: 0000000000000000d000000000000000, type: 0}
   m_NavMeshLayer: 0

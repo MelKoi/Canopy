@@ -2,7 +2,7 @@ using TMPro;
 using UnityEngine;
 
 /// <summary>
-/// 右下四角武器弹药 TMP：格式 当前/∞，换弹中显示 reload / ∞。
+/// 右下四角武器弹药 TMP：格式 弹匣/备弹；换弹中显示 reload。
 /// </summary>
 public class PlayerWeaponAmmoHud : MonoBehaviour
 {
@@ -13,8 +13,6 @@ public class PlayerWeaponAmmoHud : MonoBehaviour
     public TMP_Text textRmb;
     public TMP_Text textQ;
     public TMP_Text textE;
-
-    const string InfinitySymbol = "\u221e";
 
     void Awake()
     {
@@ -58,7 +56,9 @@ public class PlayerWeaponAmmoHud : MonoBehaviour
         if (tmp == null)
             return;
 
-        string cur = shooter.IsReloadingSlot(slot) ? "reload" : shooter.GetMagazineAmmo(slot).ToString();
-        tmp.text = $"{cur} / {InfinitySymbol}";
+        if (shooter.IsReloadingSlot(slot))
+            tmp.text = "reload";
+        else
+            tmp.text = $"{shooter.GetMagazineAmmo(slot)} / {shooter.GetReserveAmmo(slot)}";
     }
 }

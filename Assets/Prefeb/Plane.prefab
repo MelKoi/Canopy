@@ -36254,6 +36254,7 @@ GameObject:
   - component: {fileID: 5010217001910826741}
   - component: {fileID: 5010217001910826742}
   - component: {fileID: 5010217001910826711}
+  - component: {fileID: 5010217001910826744}
   m_Layer: 0
   m_Name: Plane
   m_TagString: Enemy
@@ -36344,14 +36345,14 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::PlaneDistanceHoverAI
   playerMeshChildName: Mesh
   front: {fileID: 0}
-  preferredHorizontalDistanceMeters: 38
-  preferredHorizontalDistanceExpandedMeters: 44
+  preferredHorizontalDistanceMeters: 30
+  preferredHorizontalDistanceExpandedMeters: 36
   heightAbovePlayerMeters: 8
   positionSmoothTime: 0.42
   maxMoveSpeed: 28
   bobVerticalAmplitude: 0.22
   bobVerticalFrequencyHz: 0.38
-  engagementDistanceMeters: 52
+  engagementDistanceMeters: 44
   turnLerp: 8
   obstacleAvoidBoostSeconds: 3
   obstacleLiftMetersPerSecond: 6
@@ -36362,6 +36363,10 @@ MonoBehaviour:
   obstacleProbeRadius: 2.8
   obstacleSkinWidth: 0.12
   skipCollidersOnSelfHierarchy: 1
+  stuckDistanceThreshold: 2.5
+  evadeHorizontalSpeed: 14
+  evadeProbeDistance: 36
+  evadeDecay: 2.2
 --- !u!114 &5010217001910826742
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -36374,14 +36379,14 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e7a1c2d3f4b5061728394a5b6c7d8e9f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PlaneCombat
-  engagementDistanceMeters: 56
+  engagementDistanceMeters: 46
   primaryBurstTotalBlueBullets: 240
   primaryBurstCooldownSeconds: 15
   primaryPairFireInterval: 0.1
-  primaryBulletSpeed: 420
+  primaryBulletSpeed: 130
   primaryBulletDiameter: 0.11
   primarySpawnForward: 0.35
-  primaryMaxRange: 400
+  primaryMaxRange: 680
   primaryPlayerHealthDamage: 50
   primaryPlayerToughnessDelta: -1
   primaryMovementDriftLateral: 0.14
@@ -36390,6 +36395,7 @@ MonoBehaviour:
   minionBulletSpeedMultiplier: 2.4
   bulletDiameterEnemy: 0.24
   spawnForwardEnemy: 0.6
+  orangeEnemyBulletMaxRange: 760
   projectileHealthDamage: 200
   projectileToughnessDelta: -1
 --- !u!114 &5010217001910826711
@@ -36404,8 +36410,25 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: acff501c73c6b97449a760a372f6c561, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::EnemyHitFeedback
-  hitsToDestroy: 30000
+  maxHealth: 9000
   destroyDelay: 1
+--- !u!114 &5010217001910826744
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 501021700191082671}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7c4d2e1f9a8b6c503d2e1f0a9b8c7d6e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PlaneHealthMilestoneAnnouncer
+  hitFeedback: {fileID: 0}
+  milestoneEveryDamage: 1000
+  announceMessage: "\u8840\u91CF\u5DF2\u7ECF\u4E0B\u964D1000"
+  showDurationSeconds: 2.5
+  toastSortOrder: 4100
 --- !u!1 &532707493866380109
 GameObject:
   m_ObjectHideFlags: 0
