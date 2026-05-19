@@ -44,7 +44,7 @@ public class EntryCameraSequence : MonoBehaviour//入场动画脚本
             cam.transform.rotation = thirdPersonAnchor.rotation;
         }
         controller.ResetViewFromCurrentCamera();
-        controller.enableInput = true;
+        // 视角与移动等输入由 PlayerGameplayInputGate / 教学流程统一解锁
     }
 
     IEnumerator ScreenFadeIn()

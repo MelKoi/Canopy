@@ -4,7 +4,8 @@ using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
 /// <summary>
-/// 每次进入 Level_0 时确保：教程用 UI 画布（场景内 <c>Story</c> 优先，否则可选创建 <c>Teaching</c>）、LevelTutorial 存在。
+/// 每次进入 Level_0 时确保：场景内存在 <c>Story</c>（或备用 <c>Teaching</c> 画布）与 <c>LevelTutorialStep1</c>。
+/// UI 文案与样式均在场景中配置；本类不生成文本控件。
 /// 黄昏氛围由场景中手动挂载的 <see cref="TwilightSceneAtmosphere"/> 等负责。
 /// </summary>
 static class Level0SceneBootstrap

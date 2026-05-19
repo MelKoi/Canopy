@@ -2,6 +2,8 @@ using UnityEngine;
 
 public class MechInput : MonoBehaviour//???????
 {
+    public bool GameplayInputEnabled { get; set; } = true;
+
     public Vector2 MoveAxis { get; private set; }
     public bool JumpPressed { get; private set; }
     public bool JumpHeld { get; private set; }
@@ -14,6 +16,12 @@ public class MechInput : MonoBehaviour//???????
 
     void Update()
     {
+        if (!GameplayInputEnabled)
+        {
+            ClearInput();
+            return;
+        }
+
         MoveAxis = new Vector2(
             Input.GetAxisRaw("Horizontal"),
             Input.GetAxisRaw("Vertical")
@@ -25,5 +33,16 @@ public class MechInput : MonoBehaviour//???????
         DodgePressed = Input.GetKeyDown(KeyCode.LeftShift);
         OverBoostTogglePressed = Input.GetKeyDown(KeyCode.Tab);
         TurnModeTogglePressed = Input.GetKeyDown(KeyCode.C);
+    }
+
+    void ClearInput()
+    {
+        MoveAxis = Vector2.zero;
+        JumpPressed = false;
+        JumpHeld = false;
+        BoostPressed = false;
+        DodgePressed = false;
+        OverBoostTogglePressed = false;
+        TurnModeTogglePressed = false;
     }
 }

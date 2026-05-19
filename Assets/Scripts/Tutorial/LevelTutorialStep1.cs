@@ -3,46 +3,23 @@ using System.Collections;
 using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
-using UnityEngine.UI;
 using UnityEngine.SceneManagement;
 
 /// <summary>
-/// 关卡开场教学第一步：叙事（UI 上层）+ 左侧中部半透明紫面板提示。
-/// 优先绑定场景根下 <c>Story</c> 中的 <c>Sayer</c> / <c>Saying</c> / <c>Teach</c>（名称不区分大小写）；
-/// 若仍有缺引用且 <see cref="autoBuildUiWhenMissing"/> 为 true，再自动生成 UI。
-/// Boost → Jump 覆盖顺序由触发器保证；Jump 文案显示 jumpHintDuration 秒后关闭面板。
-/// FlyTeaching：叙事后弹出 Teach；flyTeachingHintDuration≤0 时不自动关闭 Teach。
+/// Level_0 教学流程：在对应节点向已绑定的 TMP 写入文案并控制显隐。
+/// 字体、颜色、字号等均在场景/预制体 Inspector 中配置。
+/// 优先使用 <c>Story</c> 下的 <c>Sayer</c> / <c>Saying</c> / <c>Teach</c>（名称不区分大小写）。
 /// </summary>
 public class LevelTutorialStep1 : MonoBehaviour
 {
-    const int CanvasSortOrder = 5200;
-
-    [Header("叙事（留空则运行时自动生成）")]
+    [Header("UI 引用")]
     public TextMeshProUGUI narrativeTitleText;
     public TextMeshProUGUI narrativeBodyText;
-    [Tooltip("留空则自动生成；否则用于整块叙事显隐")]
+    [Tooltip("留空则分别控制标题/正文 GameObject 的显隐")]
     public GameObject narrativeRoot;
 
-    [Header("左侧中部提示面板（留空则运行时自动生成）")]
     public GameObject hintPanelRoot;
     public TextMeshProUGUI hintText;
-
-    [Header("运行时 UI")]
-    [Tooltip("缺引用时在 Awake 中生成完整教程 UI")]
-    public bool autoBuildUiWhenMissing = true;
-
-    [Header("提示面板外观")]
-    public Image hintPanelBackdrop;
-    [Tooltip("底图：紫色半透明")]
-    public Color hintBackdropColor = new Color(0.42f, 0.22f, 0.55f, 0.55f);
-    public Color hintLabelColor = Color.white;
-
-    [Header("叙事文字颜色（强制不透明）")]
-    public Color narrativeTitleColor = Color.white;
-    public Color narrativeBodyColor = new Color(0.96f, 0.96f, 0.98f, 1f);
-
-    [Header("叙事区背景（自动生成时附加，便于阅读）")]
-    public Color narrativeStripColor = new Color(0f, 0f, 0f, 0.38f);
 
     [Header("Timing（秒）")]
     public float delayBeforeNarrative = 2f;
@@ -50,7 +27,7 @@ public class LevelTutorialStep1 : MonoBehaviour
     public float narrativeLine2Duration = 2f;
     public float jumpHintDuration = 3f;
 
-    [Header("文案")]
+    [Header("开场叙事")]
     [TextArea] public string titleContent = "李秋烛";
     [TextArea] public string bodyLine1 = "代号长夜，现在已经将你秘密投放在工厂外围。";
     [TextArea] public string bodyLine2 = "寻找停泊在此处的飞行武器，将其破坏掉吧。";
@@ -66,7 +43,7 @@ public class LevelTutorialStep1 : MonoBehaviour
     [Tooltip("Teach 显示秒数；≤0 则保持显示，直至其它教学改写或关闭面板")]
     public float flyTeachingHintDuration;
 
-    [Header("战斗教学触发（FightTeaching）")]
+    [Header("战斗教学（FightTeaching）")]
     [TextArea] public string fightTeachingOpenSayer = "李秋烛";
     [TextArea] public string fightTeachingOpenSaying = "看起来敌人还是安排了些许守卫，干掉他们吧。";
     public float fightTeachingOpenNarrativeSeconds = 2f;
@@ -84,23 +61,36 @@ public class LevelTutorialStep1 : MonoBehaviour
     Coroutine _jumpRoutine;
     bool _flyTeachHandled;
     Coroutine _flyRoutine;
-    bool _runtimeGeneratedHintBackdrop;
     bool _fightTeachingHandled;
     Coroutine _fightTeachingRoutine;
     int _fightTeachingTotal;
     int _fightTeachingKills;
     bool _fightTeachingReloadHintShown;
     bool _fightTeachingCompleteStarted;
+    PlayerGameplayInputGate _inputGate;
+    bool _movementInputUnlocked;
 
     void Awake()
     {
         TryBindStoryUiIfNeeded();
-        if (autoBuildUiWhenMissing)
-            EnsureRuntimeUi();
-
-        TrySyncTeachFontWithNarrative();
-        ApplyHintPanelChrome();
         ApplyInitialUIState();
+        LockPlayerInputUntilMovementTutorial();
+    }
+
+    void LockPlayerInputUntilMovementTutorial()
+    {
+        _inputGate = PlayerGameplayInputGate.FindOrCreate();
+        _inputGate?.SetLocked(true);
+    }
+
+    void UnlockPlayerInputForMovementTutorial()
+    {
+        if (_movementInputUnlocked)
+            return;
+        _movementInputUnlocked = true;
+        if (_inputGate == null)
+            _inputGate = PlayerGameplayInputGate.FindOrCreate();
+        _inputGate?.SetLocked(false);
     }
 
     void TryBindStoryUiIfNeeded()
@@ -137,204 +127,12 @@ public class LevelTutorialStep1 : MonoBehaviour
                                 ?? sayingT.GetComponentInChildren<TextMeshProUGUI>(true);
         if (hintPanelRoot == null && teachT != null)
             hintPanelRoot = teachT.gameObject;
-        if (hintPanelBackdrop == null && teachT != null)
-            hintPanelBackdrop = teachT.GetComponent<Image>();
         if (hintText == null && teachT != null)
         {
             var tmps = teachT.GetComponentsInChildren<TextMeshProUGUI>(true);
-            for (int i = 0; i < tmps.Length; i++)
-            {
-                hintText = tmps[i];
-                break;
-            }
+            if (tmps.Length > 0)
+                hintText = tmps[0];
         }
-    }
-
-    /// <summary>
-    /// Teach 与叙事共用 Story 时，统一使用 Saying 的 SDF，避免 Teach 仍指向缺字字体而出现「□」。
-    /// </summary>
-    void TrySyncTeachFontWithNarrative()
-    {
-        if (hintText == null || narrativeBodyText == null)
-            return;
-        if (narrativeBodyText.font == null)
-            return;
-        if (hintText.font == narrativeBodyText.font &&
-            hintText.fontSharedMaterial == narrativeBodyText.fontSharedMaterial)
-            return;
-        hintText.font = narrativeBodyText.font;
-        hintText.fontSharedMaterial = narrativeBodyText.fontSharedMaterial;
-    }
-
-    void EnsureRuntimeUi()
-    {
-        bool need = narrativeTitleText == null || narrativeBodyText == null
-                    || hintPanelRoot == null || hintText == null;
-        if (!need)
-            return;
-
-        EnsureEventSystem();
-
-        var canvasGo = new GameObject("TutorialUICanvas");
-        Transform uiParent = transform;
-        Scene s = gameObject.scene;
-        if (s.IsValid())
-        {
-            foreach (GameObject root in s.GetRootGameObjects())
-            {
-                Transform t = FindTransformByNameRecursive(root.transform, "Story");
-                if (t != null)
-                {
-                    uiParent = t;
-                    break;
-                }
-            }
-            if (uiParent == transform)
-            {
-                foreach (GameObject root in s.GetRootGameObjects())
-                {
-                    Transform t = FindTransformByNameRecursive(root.transform, "Teaching");
-                    if (t != null)
-                    {
-                        uiParent = t;
-                        break;
-                    }
-                }
-            }
-        }
-        canvasGo.transform.SetParent(uiParent, false);
-        var canvas = canvasGo.AddComponent<Canvas>();
-        canvas.renderMode = RenderMode.ScreenSpaceOverlay;
-        canvas.sortingOrder = CanvasSortOrder;
-        canvas.overrideSorting = true;
-        var scaler = canvasGo.AddComponent<CanvasScaler>();
-        scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
-        scaler.referenceResolution = new Vector2(1920f, 1080f);
-        scaler.matchWidthOrHeight = 0.5f;
-        canvasGo.AddComponent<GraphicRaycaster>();
-
-        TMP_FontAsset font = GetTmpFont();
-
-        // —— 叙事区：上半屏居中，标题 + 正文
-        narrativeRoot = new GameObject("NarrativeRoot");
-        var nRootRt = narrativeRoot.AddComponent<RectTransform>();
-        narrativeRoot.transform.SetParent(canvasGo.transform, false);
-        nRootRt.anchorMin = new Vector2(0.06f, 0.48f);
-        nRootRt.anchorMax = new Vector2(0.94f, 0.94f);
-        nRootRt.offsetMin = Vector2.zero;
-        nRootRt.offsetMax = Vector2.zero;
-
-        var narrStrip = new GameObject("NarrativeStrip");
-        var stripRt = narrStrip.AddComponent<RectTransform>();
-        narrStrip.transform.SetParent(narrativeRoot.transform, false);
-        stripRt.anchorMin = Vector2.zero;
-        stripRt.anchorMax = Vector2.one;
-        stripRt.offsetMin = Vector2.zero;
-        stripRt.offsetMax = Vector2.zero;
-        var stripImg = narrStrip.AddComponent<Image>();
-        stripImg.color = narrativeStripColor;
-        stripImg.raycastTarget = false;
-
-        GameObject titleGo = CreateTmpObject("NarrativeTitle", narrativeRoot.transform, font, 40f,
-            TextAlignmentOptions.Center, true);
-        var titleRt = titleGo.GetComponent<RectTransform>();
-        titleRt.anchorMin = new Vector2(0.5f, 1f);
-        titleRt.anchorMax = new Vector2(0.5f, 1f);
-        titleRt.pivot = new Vector2(0.5f, 1f);
-        titleRt.anchoredPosition = new Vector2(0f, -24f);
-        titleRt.sizeDelta = new Vector2(880f, 72f);
-        narrativeTitleText = titleGo.GetComponent<TextMeshProUGUI>();
-
-        GameObject bodyGo = CreateTmpObject("NarrativeBody", narrativeRoot.transform, font, 26f,
-            TextAlignmentOptions.Top | TextAlignmentOptions.Center, true);
-        var bodyRt = bodyGo.GetComponent<RectTransform>();
-        bodyRt.anchorMin = new Vector2(0.5f, 1f);
-        bodyRt.anchorMax = new Vector2(0.5f, 1f);
-        bodyRt.pivot = new Vector2(0.5f, 1f);
-        bodyRt.anchoredPosition = new Vector2(0f, -100f);
-        bodyRt.sizeDelta = new Vector2(900f, 220f);
-        narrativeBodyText = bodyGo.GetComponent<TextMeshProUGUI>();
-
-        // —— 左侧中部紫半透明面板
-        hintPanelRoot = new GameObject("HintPanelRoot");
-        var hRootRt = hintPanelRoot.AddComponent<RectTransform>();
-        hintPanelRoot.transform.SetParent(canvasGo.transform, false);
-        hRootRt.anchorMin = new Vector2(0f, 0.38f);
-        hRootRt.anchorMax = new Vector2(0f, 0.62f);
-        hRootRt.pivot = new Vector2(0f, 0.5f);
-        hRootRt.anchoredPosition = new Vector2(32f, 0f);
-        hRootRt.sizeDelta = new Vector2(412f, 156f);
-
-        var backdropGo = new GameObject("HintBackdrop");
-        var bdRt = backdropGo.AddComponent<RectTransform>();
-        backdropGo.transform.SetParent(hintPanelRoot.transform, false);
-        bdRt.anchorMin = Vector2.zero;
-        bdRt.anchorMax = Vector2.one;
-        bdRt.offsetMin = Vector2.zero;
-        bdRt.offsetMax = Vector2.zero;
-        hintPanelBackdrop = backdropGo.AddComponent<Image>();
-        hintPanelBackdrop.sprite = null;
-        hintPanelBackdrop.type = Image.Type.Simple;
-        hintPanelBackdrop.color = hintBackdropColor;
-        hintPanelBackdrop.raycastTarget = false;
-        _runtimeGeneratedHintBackdrop = true;
-
-        GameObject hintGo = CreateTmpObject("HintLabel", hintPanelRoot.transform, font, 24f,
-            TextAlignmentOptions.MidlineLeft, false);
-        var hintRt = hintGo.GetComponent<RectTransform>();
-        hintRt.anchorMin = Vector2.zero;
-        hintRt.anchorMax = Vector2.one;
-        hintRt.offsetMin = new Vector2(18f, 14f);
-        hintRt.offsetMax = new Vector2(-18f, -14f);
-        hintText = hintGo.GetComponent<TextMeshProUGUI>();
-    }
-
-    static void EnsureEventSystem()
-    {
-        if (FindFirstObjectByType<UnityEngine.EventSystems.EventSystem>(FindObjectsInactive.Include) != null)
-            return;
-        var es = new GameObject("EventSystem");
-        es.AddComponent<UnityEngine.EventSystems.EventSystem>();
-        es.AddComponent<UnityEngine.EventSystems.StandaloneInputModule>();
-    }
-
-    static TMP_FontAsset GetTmpFont()
-    {
-        if (TMP_Settings.instance != null && TMP_Settings.defaultFontAsset != null)
-            return TMP_Settings.defaultFontAsset;
-        return Resources.Load<TMP_FontAsset>("Fonts & Materials/LiberationSans SDF");
-    }
-
-    static GameObject CreateTmpObject(string name, Transform parent, TMP_FontAsset font, float size,
-        TextAlignmentOptions align, bool enableWordWrapping)
-    {
-        var go = new GameObject(name);
-        var rt = go.AddComponent<RectTransform>();
-        rt.SetParent(parent, false);
-        var tmp = go.AddComponent<TextMeshProUGUI>();
-        if (font != null)
-            tmp.font = font;
-        tmp.fontSize = size;
-        tmp.alignment = align;
-        tmp.textWrappingMode = enableWordWrapping ? TextWrappingModes.Normal : TextWrappingModes.NoWrap;
-        tmp.raycastTarget = false;
-        tmp.color = Color.white;
-        return go;
-    }
-
-    void ApplyHintPanelChrome()
-    {
-        if (hintPanelBackdrop != null && _runtimeGeneratedHintBackdrop)
-            hintPanelBackdrop.color = hintBackdropColor;
-
-        if (hintText != null)
-            hintText.color = Opaque(hintLabelColor);
-    }
-
-    static Color Opaque(Color c)
-    {
-        c.a = 1f;
-        return c;
     }
 
     void ApplyInitialUIState()
@@ -345,29 +143,22 @@ public class LevelTutorialStep1 : MonoBehaviour
             hintPanelRoot.SetActive(false);
     }
 
-    /// <summary>
-    /// 与关卡开场「代号长夜…」相同的显示顺序与颜色；不改动字号/对齐等 Inspector 设置。
-    /// </summary>
     void ShowNarrativeLines(string title, string body)
     {
         if (narrativeTitleText != null)
         {
             narrativeTitleText.text = title;
-            narrativeTitleText.color = Opaque(narrativeTitleColor);
             narrativeTitleText.gameObject.SetActive(true);
         }
 
         if (narrativeBodyText != null)
         {
             narrativeBodyText.text = body;
-            narrativeBodyText.color = Opaque(narrativeBodyColor);
             narrativeBodyText.gameObject.SetActive(true);
         }
 
         if (narrativeRoot != null)
             narrativeRoot.SetActive(true);
-
-        RefreshNarrativeMeshes();
     }
 
     void UpdateNarrativeBodyLine(string body)
@@ -375,9 +166,6 @@ public class LevelTutorialStep1 : MonoBehaviour
         if (narrativeBodyText == null)
             return;
         narrativeBodyText.text = body;
-        narrativeBodyText.color = Opaque(narrativeBodyColor);
-        narrativeBodyText.ForceMeshUpdate(true);
-        Canvas.ForceUpdateCanvases();
     }
 
     void HideNarrativeLines()
@@ -393,17 +181,19 @@ public class LevelTutorialStep1 : MonoBehaviour
         }
     }
 
-    void RefreshNarrativeMeshes()
+    void ShowHint(string text)
     {
-        if (narrativeTitleText != null)
-            narrativeTitleText.ForceMeshUpdate(true);
-        if (narrativeBodyText != null)
-            narrativeBodyText.ForceMeshUpdate(true);
-        Canvas.ForceUpdateCanvases();
+        if (hintText != null)
+            hintText.text = text;
+        if (hintPanelRoot != null)
+            hintPanelRoot.SetActive(true);
     }
 
     IEnumerator Start()
     {
+        if (_inputGate == null)
+            LockPlayerInputUntilMovementTutorial();
+
         yield return new WaitForSeconds(delayBeforeNarrative);
 
         ShowNarrativeLines(titleContent, bodyLine1);
@@ -415,15 +205,8 @@ public class LevelTutorialStep1 : MonoBehaviour
         yield return new WaitForSeconds(narrativeLine2Duration);
 
         HideNarrativeLines();
-
-        if (hintText != null)
-        {
-            hintText.text = hintMovement;
-            hintText.color = Opaque(hintLabelColor);
-        }
-
-        if (hintPanelRoot != null)
-            hintPanelRoot.SetActive(true);
+        ShowHint(hintMovement);
+        UnlockPlayerInputForMovementTutorial();
     }
 
     public void NotifyJumpTeachEntered()
@@ -470,14 +253,7 @@ public class LevelTutorialStep1 : MonoBehaviour
             _jumpRoutine = null;
         }
 
-        if (hintPanelRoot != null && !hintPanelRoot.activeSelf)
-            hintPanelRoot.SetActive(true);
-
-        if (hintText != null)
-        {
-            hintText.text = hintBoost;
-            hintText.color = Opaque(hintLabelColor);
-        }
+        ShowHint(hintBoost);
     }
 
     public void NotifyFlyTeachEntered()
@@ -507,13 +283,7 @@ public class LevelTutorialStep1 : MonoBehaviour
         yield return new WaitForSeconds(narr);
         HideNarrativeLines();
 
-        if (hintPanelRoot != null && !hintPanelRoot.activeSelf)
-            hintPanelRoot.SetActive(true);
-        if (hintText != null)
-        {
-            hintText.text = flyTeachingHint;
-            hintText.color = Opaque(hintLabelColor);
-        }
+        ShowHint(flyTeachingHint);
 
         if (flyTeachingHintDuration > 0.001f)
         {
@@ -558,14 +328,7 @@ public class LevelTutorialStep1 : MonoBehaviour
         yield return new WaitForSeconds(openWait);
 
         HideNarrativeLines();
-
-        if (hintPanelRoot != null && !hintPanelRoot.activeSelf)
-            hintPanelRoot.SetActive(true);
-        if (hintText != null)
-        {
-            hintText.text = fightTeachingShootHint;
-            hintText.color = Opaque(hintLabelColor);
-        }
+        ShowHint(fightTeachingShootHint);
 
         if (fightTeachingEnemies == null || fightTeachingEnemies.Count == 0)
         {
@@ -613,10 +376,7 @@ public class LevelTutorialStep1 : MonoBehaviour
         {
             _fightTeachingReloadHintShown = true;
             if (hintText != null)
-            {
                 hintText.text = fightTeachingReloadHint;
-                hintText.color = Opaque(hintLabelColor);
-            }
         }
 
         if (_fightTeachingKills < _fightTeachingTotal || _fightTeachingTotal <= 0 || _fightTeachingCompleteStarted)
@@ -649,14 +409,7 @@ public class LevelTutorialStep1 : MonoBehaviour
 
     IEnumerator JumpHintRoutine()
     {
-        if (hintPanelRoot != null && !hintPanelRoot.activeSelf)
-            hintPanelRoot.SetActive(true);
-
-        if (hintText != null)
-        {
-            hintText.text = hintJump;
-            hintText.color = Opaque(hintLabelColor);
-        }
+        ShowHint(hintJump);
 
         yield return new WaitForSeconds(jumpHintDuration);
 

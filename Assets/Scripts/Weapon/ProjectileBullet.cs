@@ -1,7 +1,7 @@
 using UnityEngine;
 
 /// <summary>
-/// 球形弹体：直线飞行，可选轻微制导；碰撞后销毁；击中带 EnemyHitFeedback 的敌人按真实伤害结算，否则 Tag 敌人单次击杀；带尾迹可视化。
+/// 球形弹体：直线飞行，可选轻微制导；碰撞后销毁；对敌时优先沿碰撞体父链查找 <see cref="EnemyHitFeedback"/> 扣真实伤害，否则再按 Enemy 标签兜底；带尾迹可视化。
 /// </summary>
 [RequireComponent(typeof(Rigidbody))]
 public class ProjectileBullet : MonoBehaviour
@@ -175,9 +175,16 @@ public class ProjectileBullet : MonoBehaviour
         }
         else
         {
-            GameObject enemy = GetEnemyRoot(hit);
-            if (enemy != null)
-                ApplyEnemyHitEffect(enemy, _enemyDamage);
+            // 优先按「实际碰到的 Collider」向上找 EnemyHitFeedback，避免仅依赖 Enemy 标签链漏配时无法扣血。
+            var feedback = hit.GetComponentInParent<EnemyHitFeedback>();
+            if (feedback != null)
+                feedback.ApplyDamage(_enemyDamage);
+            else
+            {
+                GameObject enemy = GetEnemyRoot(hit);
+                if (enemy != null)
+                    ApplyEnemyHitEffect(enemy, _enemyDamage);
+            }
         }
 
         Destroy(gameObject);
